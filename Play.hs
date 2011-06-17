@@ -101,7 +101,7 @@ player1 = replay'
   [ (R, Inc, 0)
   , (R, Zero, 0)
   , (R, Dec, 0)
-  , (R, Zero, 2)
+  , (R, Zero, 0)
   , (L, Succ, 0)
   ]
 
