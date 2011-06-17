@@ -216,15 +216,19 @@ changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
 
-leftOrRightApply :: Bool -> Card -> SlotNum -> M2 (Maybe String)
-leftOrRightApply isLeft c i = do
+
+data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
+type Action = (LR, Card, SlotNum)
+
+leftOrRightApply :: LR -> Card -> SlotNum -> M2 (Maybe String)
+leftOrRightApply lr c i = do
   ((f,_),_) <- get
   ret <- runErrorT $ do
     checkAlive i
     c <- evalCard c    
-    if isLeft
-      then apply c (f ! i)
-      else apply (f ! i) c        
+    case lr of
+      L -> apply c (f ! i)
+      R -> apply (f ! i) c        
   let (val,err) =
         case ret of
           Left err -> (PAp I [], Just err)
@@ -233,12 +237,11 @@ leftOrRightApply isLeft c i = do
   put $ ((IM.insert i val f, v), (f',v'))
   return err
 
-
 leftApply :: Card -> SlotNum -> M2 (Maybe String)
-leftApply = leftOrRightApply True
+leftApply = leftOrRightApply L
 
 rightApply :: Card -> SlotNum -> M2 (Maybe String)
-rightApply = leftOrRightApply False
+rightApply = leftOrRightApply R
 
 traceState :: M2 ()
 traceState = do

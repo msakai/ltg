@@ -6,10 +6,6 @@ import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import LTG
 
-data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
-
-type Action = (LR, Card, SlotNum)
-
 type Player = (Action, Opponent)
 newtype Opponent = Opponent (GameState -> Player)
 
