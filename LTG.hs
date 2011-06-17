@@ -183,3 +183,8 @@ applyCard Zombie [i,x] = do
   return $ PAp I []
 applyCard _ _ = mzero
 
+changeTurn :: M ()
+changeTurn = do
+  (proponent, opponent) <- get
+  put (opponent, proponent)
+
