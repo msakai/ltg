@@ -7,6 +7,7 @@ import Control.Monad.Error
 import Control.Monad.Reader
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
+import qualified Data.Map as Map
 import Text.Printf
 
 -- ---------------------------------------------------------------------------
@@ -81,6 +82,11 @@ cardName Help   = "help"
 cardName Copy   = "copy"
 cardName Revive = "revive"
 cardName Zombie = "zombie"
+
+cardOfName :: String -> Card
+cardOfName = (m Map.!)
+  where
+    m = Map.fromList [(cardName card, card) | card <-[I .. Zombie]]
 
 -- ---------------------------------------------------------------------------
 

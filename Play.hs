@@ -4,6 +4,7 @@ import Control.Monad
 import Control.Monad.State
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
+import System.Environment (getArgs)
 import LTG
 
 -- Player is a (infinite state) Mealy Machine
@@ -73,3 +74,41 @@ replay :: [Action] -> Player
 replay (x:xs) = Player (\_ -> (x, replay xs))
 
 -- ---------------------------------------------------------------------------
+
+-- runコマンドの実装用
+runPlayer :: Player -> IO ()
+runPlayer p = flip evalStateT initialState $ do
+  args <- lift getArgs
+  let isPlayer0 = (args /= ["1"])
+
+      opp :: Player -> StateT GameState IO ()
+      opp p = do
+        lr <- lift getLine
+        case lr of
+          "1" -> do
+            card <- lift $ liftM cardOfName getLine
+            slot <- lift $ readLn
+            act (not isPlayer0) (L, card, slot)
+          "2" -> do
+            slot <- lift $ readLn
+            card <- lift $ liftM cardOfName getLine
+            act (not isPlayer0) (R, card, slot)
+        prop p
+
+      prop :: Player -> StateT GameState IO ()
+      prop p = do
+        s <- get
+        let ((lr,card,slot), p') = trans p s
+        case lr of
+          L -> do
+            lift $ print 1
+            lift $ putStrLn $ cardName card
+            lift $ print slot
+          R -> do
+            lift $ putStrLn "2"
+            lift $ print slot
+            lift $ putStrLn $ cardName card
+        opp p'
+  if isPlayer0
+    then opp p
+    else prop p
