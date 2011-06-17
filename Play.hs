@@ -8,8 +8,6 @@ import LTG
 
 data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
 
--- False = left application
--- True  = right application
 type Action = (LR, Card, SlotNum)
 
 type Player = (Action, Opponent)
