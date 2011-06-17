@@ -213,7 +213,9 @@ changeTurn = do
 leftApply :: Card -> SlotNum -> M2 (Maybe String)
 leftApply c i = do
   ((f,_),_) <- get
-  ret <- runErrorT $ applyCard c [f ! i]
+  ret <- runErrorT $ do
+    c <- evalCard c
+    apply c (f ! i)
   let (val,err) =
         case ret of
           Left err -> (PAp I [], Just err)
@@ -226,8 +228,8 @@ rightApply :: Card -> SlotNum -> M2 (Maybe String)
 rightApply c i = do
   ((f,_),_) <- get
   ret <- runErrorT $ do
-    arg <- evalCard c
-    apply (f ! i) arg
+    c <- evalCard c
+    apply (f ! i) c
   let (val,err) =
         case ret of
           Left err -> (PAp I [], Just err)
