@@ -4,16 +4,20 @@ import Control.Monad
 import Control.Monad.State
 import LTG
 
+data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
+
 -- False = left application
 -- True  = right application
-type Action = (Bool, Card, SlotNum)
+type Action = (LR, Card, SlotNum)
 
 type Player = (Action, Opponent)
 newtype Opponent = Opponent (GameState -> Player)
 
 act :: Action -> StateT GameState IO ()
 act (flag,c,i) = do
-  let a = if flag then rightApply c i else leftApply c i
+  let a = case flag of 
+            L -> leftApply c i
+            R -> rightApply c i
   s <- get
   let (err,s') = runState a s
   case err of
