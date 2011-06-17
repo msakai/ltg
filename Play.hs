@@ -12,11 +12,11 @@ import LTG
 newtype Player = Player{ trans :: GameState -> (Action, Player) }
 
 act :: Bool -> Action -> StateT GameState IO ()
-act p1 (flag,c,i) = do
-  let g = runState $ doAction (flag,c,i)
+act p0 action = do
+  let g = runState $ doAction action
   s <- get
   let (err,s') =
-        if p1
+        if p0
         then g s
         else
           case g (swap s) of
@@ -83,13 +83,7 @@ only p = do
   act True action
   only p'
 
--- ---------------------------------------------------------------------------
-
 replay :: [Action] -> Player
 replay (x:xs) = Player (\_ -> (x, replay xs))
-
--- obsoleted
-replay' :: [Action] -> Player
-replay' = replay
 
 -- ---------------------------------------------------------------------------
