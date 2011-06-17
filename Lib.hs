@@ -7,7 +7,7 @@ copy from to = makeNum from to ++ [(L, Get, to)]
 
 makeNum :: Int -> SlotNum -> [Action]
 makeNum n to = 
-  [ (L, Put, to)
+  [ (L, Put, to)  -- toにIが入っていればこれはしなくてOk
   , (R, Zero, to)
   ] ++
   replicate n (L, Succ, to)
