@@ -163,8 +163,11 @@ applyCard Attack [i,j,n] = do
   ((f,v),(f',v')) <- get
   let val1 = v ! i
       val2 = v' ! (255 - j)
-      val1' = max 0 (val1 - n)
-      val2' = max 0 (val2 - ((n*9) `div` 10))
+  when (val1 < n) $ lift $ Left "attack error"
+  let val1' = val1 - n
+      val2' = if dead val2
+              then val2
+              else max 0 (val2 - ((n*9) `div` 10))
   put ( (f, IM.insert i val1' v)
       , (f', IM.insert (255 - j) val2' v')
       )
