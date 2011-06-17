@@ -3,6 +3,7 @@ module LTG where
 import Control.Monad
 import Control.Monad.State
 import qualified Data.IntMap as IM
+import Data.IntMap ((!))
 
 type SlotNum = Int
 
@@ -124,7 +125,7 @@ applyCard Get [i] = do
   i <- asInt i
   guard $ isValidSlotNum i
   ((f,v),(f',v')) <- get
-  return $ f IM.! i
+  return $ f ! i
 applyCard Put [x,y] = return y
 applyCard S [f,g,x] = do
   h <- apply f x
@@ -136,7 +137,7 @@ applyCard Inc [i] = do
   i <- asInt i
   guard $ isValidSlotNum i
   ((f,v),(f',v')) <- get
-  let val = v IM.! i
+  let val = v ! i
   when (0 < val && val < 0xFFFF) $
     put ((f, IM.insert i (val+1) v), (f', v'))
   return $ PAp I []
@@ -144,7 +145,7 @@ applyCard Dec [i] = do
   i <- asInt i
   guard $ isValidSlotNum i
   ((f,v),(f',v')) <- get
-  let val = v' IM.! (255-i)
+  let val = v' ! (255-i)
   when (0 < val && val < 0xFFFF) $
     put ((f,v), (f', IM.insert (255-i) (val-1) v'))
   return $ PAp I []
@@ -155,8 +156,8 @@ applyCard Attack [i,j,n] = do
   guard $ isValidSlotNum i
   guard $ isValidSlotNum j
   ((f,v),(f',v')) <- get
-  let val1 = v IM.! i
-      val2 = v' IM.! (255 - j)
+  let val1 = v ! i
+      val2 = v' ! (255 - j)
       val1' = max 0 (val1 - n)
       val2' = max 0 (val2 - ((n*9) `div` 10))
   put ( (f, IM.insert i val1' v)
@@ -170,29 +171,27 @@ applyCard Help [i,j,n] = do
   guard $ isValidSlotNum i
   guard $ isValidSlotNum j
   ((f,v),(f',v')) <- get
-  let val1 = v IM.! i
-      val2 = v IM.! j
-      val1' = max 0 (val1 - n)
-      val2' = min 0xFFFF (val2 + ((n*11) `div` 10))
-  put ((f, IM.insert j val2' $ IM.insert i val1' $ v), (f',v'))
+  let v2 = IM.insert i (max 0 ((v ! i) - n)) v
+      v3 = IM.insert j (min 0xFFFF ((v2 ! j) + ((n*11) `div` 10))) v2
+  put ((f,v3), (f',v'))
   return $ PAp I []
 applyCard Copy [i] = do
   i <- asInt i
   guard $ isValidSlotNum i
   ((f,v),(f',v')) <- get
-  return $ f' IM.! i
+  return $ f' ! i
 applyCard Revive [i] = do
   i <- asInt i
   guard $ isValidSlotNum i
   ((f,v),(f',v')) <- get
-  let val = v IM.! i
+  let val = v ! i
   when (val <= 0) $
     put ((f, IM.insert i 1 v), (f',v'))
   return $ PAp I []
 applyCard Zombie [i,x] = do
   i <- asInt i
   ((f,v),(f',v')) <- get
-  let val = v' IM.! (255-i)
+  let val = v' ! (255-i)
   guard $ dead val
   put ((f,v), (IM.insert (255-i) x f', IM.insert (255-i) (-1) v'))
   return $ PAp I []
