@@ -58,6 +58,7 @@ play = p1
       s <- get
       p1 (op s) (snd p)
 
+printState :: GameState -> IO ()
 printState (p1,p2) = do
   print $ g p1
   print $ g p2

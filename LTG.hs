@@ -92,6 +92,10 @@ initialPlayerState =
   )
 
 type GameState = (PlayerState, PlayerState)
+{-
+このファイルの関数では、常に手順側のプレイヤーの状態がfstに格納されている
+と仮定している。
+-}
 
 initialState :: GameState
 initialState = (initialPlayerState, initialPlayerState)
