@@ -14,8 +14,28 @@ makeNum n to =
 
 apply :: SlotNum -> [Action]
 apply res = 
-  [(R,Get,res),(L,K,res),(L,S,res),(R,Succ,res),(L,S,res),(R,Get,res),(R,Zero,res)]
+  [(L,Put,res)  -- resにIが入っていればこれはしなくてOk
+  ,(R,Get,res)
+  ,(L,K,res)
+  ,(L,S,res)
+  ,(R,Succ,res)
+  ,(L,S,res)
+  ,(R,Get,res)
+  ,(R,Zero,res)
+  ]
 
 compose :: SlotNum -> [Action]
-compose c = 
-  [(R,K,c),(R,S,c),(L,S,c),(R,K,c)]
+compose compo = 
+  [(L,Put,compo) -- compoにIが入っていればこれはしなくてOk
+  ,(R,K,compo)
+  ,(R,S,compo)
+  ,(L,S,compo)
+  ,(R,K,compo)
+  ]
+
+mocking :: SlotNum -> [Action] -- M
+mocking to =
+  [ (L, Put, to)  -- toにIが入っていればこれはしなくてOk
+  , (L, S  , to)
+  , (R, I  , to) 
+  ]
