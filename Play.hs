@@ -35,11 +35,6 @@ act p1 (flag,c,i) = do
 play :: Player -> Opponent -> StateT GameState IO ()
 play = p1
   where
-    g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
-                    , f ! i /= PAp I [] || v ! i /= 10000]
-    printState (p1,p2) = do
-      print $ g p1
-      print $ g p2
 
     p1 :: Player -> Opponent -> StateT GameState IO ()
     p1 p (Opponent op) = do
@@ -58,6 +53,23 @@ play = p1
       act False (fst p)
       s <- get
       p1 (op s) (snd p)
+
+printState (p1,p2) = do
+  print $ g p1
+  print $ g p2
+  where
+    g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
+                    , f ! i /= PAp I [] || v ! i /= 10000]
+
+only :: Player -> StateT GameState IO ()
+only p = do
+  lift $ putStrLn "========= player 0"
+  get >>= \s -> lift (printState s)
+  lift $ print $ (fst p)
+  act True (fst p)
+  s <- get
+  case snd p of
+    Opponent f -> only (f s)
 
 -- ---------------------------------------------------------------------------
 
