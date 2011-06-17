@@ -87,24 +87,17 @@ initialPlayerState =
   , IM.fromList [(i, 10000) | i <- [0..255]]
   )
 
-initialState :: (PlayerState, PlayerState)
+type GameState = (PlayerState, PlayerState)
+
+initialState :: GameState
 initialState = (initialPlayerState, initialPlayerState)
 
-type M = StateT (PlayerState,PlayerState) (Either String)
-
-runM :: M a -> Either String (a, (PlayerState, PlayerState))
-runM m = runStateT m initialState
-
-execM :: M a -> Either String (PlayerState, PlayerState)
-execM m = execStateT m initialState
-
-evalM :: M a -> Either String a
-evalM m = evalStateT m initialState
+type M = ErrorT String (State GameState)
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
 asInt (PAp Zero []) = return 0
-asInt x = lift $ Left $ show x ++ "is not an integer."
+asInt x = throwError $ show x ++ "is not an integer."
 
 evalCard :: Card -> M Value
 evalCard c
@@ -112,7 +105,7 @@ evalCard c
   | otherwise    = return $ PAp c []
 
 apply :: Value -> Value -> M Value
-apply (IntVal n) _ = lift $ Left $ "cannot apply integer " ++ show n
+apply (IntVal n) _ = throwError $ "cannot apply integer " ++ show n
 apply (PAp c args) arg
   | arity c == length args + 1 = applyCard c (args++[arg])
   | otherwise = return (PAp c (args ++ [arg]))  
@@ -163,7 +156,7 @@ applyCard Attack [i,j,n] = do
   ((f,v),(f',v')) <- get
   let val1 = v ! i
       val2 = v' ! (255 - j)
-  when (val1 < n) $ lift $ Left "attack error"
+  when (val1 < n) $ throwError "attack error"
   let val1' = val1 - n
       val2' = if dead val2
               then val2
@@ -200,39 +193,48 @@ applyCard Zombie [i,x] = do
   i <- asInt i
   ((f,v),(f',v')) <- get
   let val = v' ! (255-i)
-  unless (dead val) $ lift $ Left $ "not dead"
+  unless (dead val) $ throwError "not dead"
   put ((f,v), (IM.insert (255-i) x f', IM.insert (255-i) (-1) v'))
   return $ PAp I []
-applyCard c args = lift $ Left $ "cannot handle " ++ show (PAp c args)
+applyCard c args = throwError $ "cannot handle " ++ show (PAp c args)
 
 checkValidSlotNum :: SlotNum -> M ()
 checkValidSlotNum i = 
   unless (isValidSlotNum i) $
-    lift $ Left $ show i ++ " is not a valid slot number"
+    throwError $ show i ++ " is not a valid slot number"
 
-changeTurn :: M ()
+type M2 = State GameState
+
+changeTurn :: M2 ()
 changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
 
-leftApply :: Card -> SlotNum -> M ()
+leftApply :: Card -> SlotNum -> M2 ()
 leftApply c i = do
   ((f,_),_) <- get
-  val <- applyCard c [f ! i]
+  ret <- runErrorT $ applyCard c [f ! i]
+  let val = case ret of
+              Left err -> PAp I []
+              Right val -> val
   ((f,v),(f',v')) <- get
   put $ ((IM.insert i val f, v), (f',v'))
   return ()
 
-rightApply :: Card -> SlotNum -> M ()
+rightApply :: Card -> SlotNum -> M2 ()
 rightApply c i = do
   ((f,_),_) <- get
-  arg <- evalCard c
-  val <- apply (f ! i) arg
+  ret <- runErrorT $ do
+    arg <- evalCard c
+    apply (f ! i) arg
+  let val = case ret of
+              Left err -> PAp I []
+              Right val -> val
   ((f,v),(f',v')) <- get
   put $ ((IM.insert i val f, v), (f',v'))
   return ()
 
-traceState :: M ()
+traceState :: M2 ()
 traceState = do
   (proponent, opponent) <- get
   let g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
@@ -241,7 +243,7 @@ traceState = do
   trace (show (g proponent)) $ return ()
   trace (show (g opponent)) $ return ()
 
-test = evalM $ do
+test = flip runState initialState $ do
   -- proponent
   rightApply Zero 0
   traceState
