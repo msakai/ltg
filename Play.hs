@@ -1,4 +1,4 @@
-module Player where
+module Play where
 
 import Control.Monad
 import Control.Monad.State
