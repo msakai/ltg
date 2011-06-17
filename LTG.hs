@@ -203,6 +203,12 @@ checkValidSlotNum i =
   unless (isValidSlotNum i) $
     throwError $ show i ++ " is not a valid slot number"
 
+checkAlive :: SlotNum -> M ()
+checkAlive i = do
+  ((_,v),_) <- get
+  when (dead (v ! i)) $
+    throwError $ "slot " ++ show i ++ " is not alive"
+
 type M2 = State GameState
 
 changeTurn :: M2 ()
@@ -210,12 +216,15 @@ changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
 
-leftApply :: Card -> SlotNum -> M2 (Maybe String)
-leftApply c i = do
+leftOrRightApply :: Bool -> Card -> SlotNum -> M2 (Maybe String)
+leftOrRightApply isLeft c i = do
   ((f,_),_) <- get
   ret <- runErrorT $ do
-    c <- evalCard c
-    apply c (f ! i)
+    checkAlive i
+    c <- evalCard c    
+    if isLeft
+      then apply c (f ! i)
+      else apply (f ! i) c        
   let (val,err) =
         case ret of
           Left err -> (PAp I [], Just err)
@@ -224,19 +233,12 @@ leftApply c i = do
   put $ ((IM.insert i val f, v), (f',v'))
   return err
 
+
+leftApply :: Card -> SlotNum -> M2 (Maybe String)
+leftApply = leftOrRightApply True
+
 rightApply :: Card -> SlotNum -> M2 (Maybe String)
-rightApply c i = do
-  ((f,_),_) <- get
-  ret <- runErrorT $ do
-    c <- evalCard c
-    apply (f ! i) c
-  let (val,err) =
-        case ret of
-          Left err -> (PAp I [], Just err)
-          Right val -> (val, Nothing)
-  ((f,v),(f',v')) <- get
-  put $ ((IM.insert i val f, v), (f',v'))
-  return err
+rightApply = leftOrRightApply False
 
 traceState :: M2 ()
 traceState = do
