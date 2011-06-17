@@ -5,6 +5,7 @@ import Control.Monad.State
 import Control.Monad.Error
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
+import Debug.Trace
 
 type SlotNum = Int
 
@@ -91,9 +92,14 @@ initialState = (initialPlayerState, initialPlayerState)
 
 type M = StateT (PlayerState,PlayerState) (Either String)
 
-runM :: StateT (PlayerState, PlayerState) m a
-     -> m (a, (PlayerState, PlayerState))
+runM :: M a -> Either String (a, (PlayerState, PlayerState))
 runM m = runStateT m initialState
+
+execM :: M a -> Either String (PlayerState, PlayerState)
+execM m = execStateT m initialState
+
+evalM :: M a -> Either String a
+evalM m = evalStateT m initialState
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
@@ -222,4 +228,20 @@ rightApply c i = do
   ((f,v),(f',v')) <- get
   put $ ((IM.insert i val f, v), (f',v'))
   return ()
- 
+
+traceState :: M ()
+traceState = do
+  (proponent, opponent) <- get
+  let g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
+                      , f ! i /= PAp I [] || v ! i /= 10000]
+  trace "=========" $ return ()
+  trace (show (g proponent)) $ return ()
+  trace (show (g opponent)) $ return ()
+
+test = evalM $ do
+  rightApply Zero 0
+  traceState
+  changeTurn
+  rightApply Inc 0
+  traceState
+  changeTurn
