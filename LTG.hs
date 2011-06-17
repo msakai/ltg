@@ -241,6 +241,21 @@ doAction (lr,c,i) = do
   put $ ((IM.insert i val f, v), (f',v'))
   return err
 
+runZombies :: M2 [String]
+runZombies = do
+  liftM concat $ forM [0..255] $ \i -> do
+    ((f,v),_) <- get
+    if (v ! i == -1)
+      then do
+        ret <- runErrorT $ apply (f ! i) (PAp I [])
+        ((f,v),(f',v')) <- get
+        put ((IM.insert i (PAp I []) f, IM.insert i 0 v), (f',v'))
+        case ret of
+          Left err -> return [err]
+          Right _ -> return []
+      else
+        return []
+
 changeTurn :: M2 ()
 changeTurn = do
   (proponent, opponent) <- get
@@ -259,51 +274,61 @@ traceState = do
 
 test = flip runState initialState $ do
   -- proponent
+  runZombies
   doAction (R, Zero, 0)
   traceState
   changeTurn
 
   -- opponent
+  runZombies
   doAction (R, Inc, 0)
   changeTurn
   traceState
 
   -- proponent
+  runZombies
   doAction (L, Succ, 0)
   traceState
   changeTurn
 
   -- opponent
+  runZombies
   doAction (R, Zero, 0)
   changeTurn
   traceState
 
   -- proponent
+  runZombies
   doAction (L, Succ, 0)
   traceState
   changeTurn
 
   -- opponent
+  runZombies
   doAction (R, Dec, 0)
   changeTurn
   traceState
 
   -- proponent
+  runZombies
   doAction (L, Dbl, 0)
   traceState
   changeTurn
 
   -- opponent
+  runZombies
   doAction (R, Zero, 2)
   changeTurn
   traceState
 
   -- proponent
+  runZombies
   doAction (L, Inc, 0)
   traceState
   changeTurn
 
   -- opponent
+  runZombies
   doAction (L, Succ, 0)
   changeTurn
   traceState

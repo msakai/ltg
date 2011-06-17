@@ -17,8 +17,8 @@ act p1 (flag,c,i) = do
         if p1
         then g s
         else
-          case g (snd s, fst s) of
-            (err,s') -> (err, (snd s', fst s'))
+          case g (swap s) of
+            (err,s') -> (err, (swap s'))
   put s'
   case err of
     Nothing -> return ()
@@ -31,7 +31,13 @@ play = p1
     p1 :: Player -> Opponent -> StateT GameState IO ()
     p1 p (Opponent op) = do
       lift $ putStrLn "========= player 0"
-      get >>= \s -> lift (printState s)
+      s <- get
+      lift $ printState s
+      when (-1 `elem` IM.elems (snd (fst s))) $ do
+        lift $ putStrLn "Zombie running ..."
+        let s' = execState runZombies s
+        put s'
+        lift $ printState s'
       lift $ print $ (fst p)
       act True (fst p)
       (a,b) <- get
@@ -40,7 +46,13 @@ play = p1
     p2 :: Player -> Opponent -> StateT GameState IO ()
     p2 p (Opponent op) = do
       lift $ putStrLn "========= player 1"
-      get >>= \s -> lift (printState s)
+      s <- get
+      lift $ printState s
+      when (-1 `elem` IM.elems (snd (snd s))) $ do
+        lift $ putStrLn "Zombie running ..."
+        let s' = swap $ execState runZombies (swap s)
+        put s'
+        lift $ printState s'
       lift $ print $ (fst p)
       act False (fst p)
       s <- get
@@ -52,6 +64,9 @@ printState (p1,p2) = do
   where
     g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
                     , f ! i /= PAp I [] || v ! i /= 10000]
+
+swap :: (a,b) -> (b,a)
+swap (a,b) = (b,a)
 
 only :: Player -> StateT GameState IO ()
 only p = do
