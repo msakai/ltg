@@ -15,3 +15,7 @@ makeNum n to =
 apply :: SlotNum -> [Action]
 apply res = 
   [(R,Get,res),(L,K,res),(L,S,res),(R,Succ,res),(L,S,res),(R,Get,res),(R,Zero,res)]
+
+compose :: SlotNum -> [Action]
+compose c = 
+  [(R,K,c),(R,S,c),(L,S,c),(R,K,c)]
