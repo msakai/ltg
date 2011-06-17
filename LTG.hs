@@ -103,30 +103,42 @@ initialState = (initialPlayerState, initialPlayerState)
 
 -- ---------------------------------------------------------------------------
 
-type M = ReaderT Bool (ErrorT String (State GameState))
+type M = ReaderT Bool (ErrorT String (State (GameState, Int)))
 
 runM :: Bool -> M a -> State GameState (Either String a)
-runM zombieMode m = runErrorT (runReaderT m zombieMode)
+runM zombieMode m = do
+  s <- get
+  case runState (runErrorT (runReaderT m zombieMode)) (s,0) of
+    (ret, (s,_)) -> do
+      put s
+      return ret
 
 getPlayer0 :: M PlayerState
 getPlayer0 = do
-  (p0,_) <- get
+  ((p0,_),_) <- get
   return p0
 
 getPlayer1 :: M PlayerState
 getPlayer1 = do
-  (_,p1) <- get
+  ((_,p1),_) <- get
   return p1
 
 putPlayer0 :: PlayerState -> M ()
 putPlayer0 p0 = do
-  (_, p1) <- get
-  put (p0, p1)  
+  ((_, p1), apcnt) <- get
+  put ((p0, p1), apcnt)
 
 putPlayer1 :: PlayerState -> M ()
 putPlayer1 p1 = do
-  (p0, _) <- get
-  put (p0, p1)
+  ((p0, _), apcnt) <- get
+  put ((p0, p1), apcnt)
+
+countApp :: M ()
+countApp = do
+  (s, apcnt) <- get
+  if apcnt >= 1000
+    then throwError "number of application > 1000"
+    else put (s, apcnt + 1)
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
@@ -140,9 +152,11 @@ evalCard c
 
 apply :: Value -> Value -> M Value
 apply (IntVal n) _ = throwError $ "cannot apply integer " ++ show n
-apply (PAp c args) arg
-  | arity c == length args + 1 = applyCard c (args++[arg])
-  | otherwise = return (PAp c (args ++ [arg]))  
+apply (PAp c args) arg = do
+  countApp
+  if arity c == length args + 1
+    then applyCard c (args++[arg])
+    else return (PAp c (args ++ [arg]))  
 
 applyCard :: Card -> [Value] -> M Value
 applyCard I [val]  = return val
