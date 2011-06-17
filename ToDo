@@ -1,8 +1,11 @@
+○ 外部と対戦するためのプロトコルの実装
+
 ○ スロットに置くコンビネータの実装
  ■ copy
  ■ makeNum
  ■ apply
  ■ (B)luebird (関数合成)
+ ■ (M)ocking bird (自己適用）
  □ (C)ardinal (flip)
  □ (L)ark の実装
  □ Yコンビネータの実装
@@ -10,6 +13,8 @@
  □ pair, cons, cdr (rf. SICP)
  □ isZero
  □ prev (subtract 1)
+ □ equal
+ □ lessthan
 
 ○ 算術演算子の実装
  □ 羃算の実装
