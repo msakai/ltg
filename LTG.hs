@@ -321,7 +321,7 @@ test = flip runState initialState $ do
 
   -- opponent
   runZombies
-  doAction (R, Zero, 2)
+  doAction (R, Zero, 0)
   changeTurn
   traceState
 
