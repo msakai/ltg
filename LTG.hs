@@ -97,7 +97,7 @@ type M = ErrorT String (State GameState)
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
 asInt (PAp Zero []) = return 0
-asInt x = throwError $ show x ++ "is not an integer."
+asInt x = throwError $ show x ++ " is not an integer."
 
 evalCard :: Card -> M Value
 evalCard c
