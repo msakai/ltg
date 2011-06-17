@@ -205,3 +205,21 @@ changeTurn :: M ()
 changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
+
+leftApply :: Card -> SlotNum -> M ()
+leftApply c i = do
+  ((f,_),_) <- get
+  val <- applyCard c [f ! i]
+  ((f,v),(f',v')) <- get
+  put $ ((IM.insert i val f, v), (f',v'))
+  return ()
+
+rightApply :: Card -> SlotNum -> M ()
+rightApply c i = do
+  ((f,_),_) <- get
+  arg <- evalCard c
+  val <- apply (f ! i) arg
+  ((f,v),(f',v')) <- get
+  put $ ((IM.insert i val f, v), (f',v'))
+  return ()
+ 
