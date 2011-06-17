@@ -3,6 +3,7 @@ module LTG where
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Error
+import Control.Monad.Reader
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import Debug.Trace
@@ -102,7 +103,30 @@ initialState = (initialPlayerState, initialPlayerState)
 
 -- ---------------------------------------------------------------------------
 
-type M = ErrorT String (State GameState)
+type M = ReaderT Bool (ErrorT String (State GameState))
+
+runM :: Bool -> M a -> State GameState (Either String a)
+runM zombieMode m = runErrorT (runReaderT m zombieMode)
+
+getPlayer0 :: M PlayerState
+getPlayer0 = do
+  (p0,_) <- get
+  return p0
+
+getPlayer1 :: M PlayerState
+getPlayer1 = do
+  (_,p1) <- get
+  return p1
+
+putPlayer0 :: PlayerState -> M ()
+putPlayer0 p0 = do
+  (_, p1) <- get
+  put (p0, p1)  
+
+putPlayer1 :: PlayerState -> M ()
+putPlayer1 p1 = do
+  (p0, _) <- get
+  put (p0, p1)
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
@@ -132,7 +156,7 @@ applyCard Dbl [n] = do
 applyCard Get [i] = do
   i <- asInt i
   checkValidSlotNum i
-  ((f,v),(f',v')) <- get
+  (f,v) <- getPlayer0
   return $ f ! i
 applyCard Put [x] = return (PAp I [])
 applyCard S [f,g,x] = do
@@ -144,18 +168,31 @@ applyCard K [x,y] = return x
 applyCard Inc [i] = do
   i <- asInt i
   checkValidSlotNum i
-  ((f,v),(f',v')) <- get
+  (f,v) <- getPlayer0
   let val = v ! i
-  when (0 < val && val < 0xFFFF) $
-    put ((f, IM.insert i (val+1) v), (f', v'))
+  zombieMode <- ask
+  if not zombieMode
+    then
+      when (0 < val && val < 0xFFFF) $
+        putPlayer0 (f, IM.insert i (val+1) v)
+    else
+      when (0 < val) $
+        putPlayer0 (f, IM.insert i (val-1) v)
   return $ PAp I []
 applyCard Dec [i] = do
   i <- asInt i
   checkValidSlotNum i
-  ((f,v),(f',v')) <- get
-  let val = v' ! (255-i)
-  when (0 < val && val < 0xFFFF) $
-    put ((f,v), (f', IM.insert (255-i) (val-1) v'))
+  (f',v') <- getPlayer1
+  let idx = 255 - i
+      val = v' ! idx
+  zombieMode <- ask
+  if not zombieMode
+    then
+      when (0 < val) $
+        putPlayer1 (f', IM.insert idx (val-1) v')
+    else
+      when (0 < val && val < 0xFFFF) $
+        putPlayer1 (f', IM.insert idx (val+1) v')
   return $ PAp I []
 applyCard Attack [i,j,n] = do
   i <- asInt i
@@ -163,17 +200,24 @@ applyCard Attack [i,j,n] = do
   n <- asInt n
   checkValidSlotNum i
   checkValidSlotNum j
-  ((f,v),(f',v')) <- get
+  (f,v)   <- getPlayer0
+  (f',v') <- getPlayer1
   let val1 = v ! i
-      val2 = v' ! (255 - j)
-  when (val1 < n) $ throwError "attack error"
-  let val1' = val1 - n
-      val2' = if dead val2
-              then val2
-              else max 0 (val2 - ((n*9) `div` 10))
-  put ( (f, IM.insert i val1' v)
-      , (f', IM.insert (255 - j) val2' v')
-      )
+      idx2 = 255 - j
+      val2 = v' ! idx2
+  zombieMode <- ask
+  if not zombieMode
+    then do
+      when (val1 < n) $ throwError "attack error"
+      let val1' = val1 - n
+          val2' = if dead val2
+                  then val2
+                  else max 0 (val2 - ((n*9) `div` 10))
+      putPlayer0 (f,  IM.insert i val1' v)
+      putPlayer1 (f', IM.insert idx2 val2' v')
+    else do
+      let val2' = min 0xFF (val2 + ((n*9) `div` 10))
+      putPlayer1 (f', IM.insert idx2 val2' v')
   return $ PAp I []
 applyCard Help [i,j,n] = do
   i <- asInt i
@@ -181,17 +225,23 @@ applyCard Help [i,j,n] = do
   n <- asInt n
   checkValidSlotNum i
   checkValidSlotNum j
-  ((f,v),(f',v')) <- get
-  let val1 = v ! i
-  when (val1 < n) $ throwError "help error"
-  let v2 = IM.insert i (val1 - n) v
-      v3 = IM.insert j (min 0xFFFF ((v2 ! j) + ((n*11) `div` 10))) v2
-  put ((f,v3), (f',v'))
+  (f,v) <- getPlayer0
+  zombieMode <- ask
+  if not zombieMode
+    then do
+      let val1 = v ! i
+      when (val1 < n) $ throwError "help error"
+      let v2 = IM.insert i (val1 - n) v
+          v3 = IM.insert j (min 0xFFFF ((v2 ! j) + ((n*11) `div` 10))) v2
+      putPlayer0 (f,v3)
+    else do
+      let v2 = IM.insert j (max 0 (((v ! j) - ((n*11) `div` 10)))) v
+      putPlayer0 (f,v2)
   return $ PAp I []
 applyCard Copy [i] = do
   i <- asInt i
   checkValidSlotNum i
-  ((f,v),(f',v')) <- get
+  (f',_) <- getPlayer1
   return $ f' ! i
 applyCard Revive [i] = do
   i <- asInt i
@@ -203,10 +253,11 @@ applyCard Revive [i] = do
   return $ PAp I []
 applyCard Zombie [i,x] = do
   i <- asInt i
-  ((f,v),(f',v')) <- get
-  let val = v' ! (255-i)
+  (f',v') <- getPlayer1
+  let idx = 255 - i
+      val = v' ! idx
   unless (dead val) $ throwError "not dead"
-  put ((f,v), (IM.insert (255-i) x f', IM.insert (255-i) (-1) v'))
+  putPlayer1 (IM.insert idx x f', IM.insert idx (-1) v')
   return $ PAp I []
 applyCard c args = throwError $ "cannot handle " ++ show (PAp c args)
 
@@ -231,7 +282,7 @@ type M2 = State GameState
 doAction :: Action -> M2 (Maybe String)
 doAction (lr,c,i) = do
   ((f,_),_) <- get
-  ret <- runErrorT $ do
+  ret <- runM False $ do
     checkAlive i
     c <- evalCard c    
     case lr of
@@ -251,7 +302,7 @@ runZombies = do
     ((f,v),_) <- get
     if (v ! i == -1)
       then do
-        ret <- runErrorT $ apply (f ! i) (PAp I [])
+        ret <- runM True $ apply (f ! i) (PAp I [])
         ((f,v),(f',v')) <- get
         put ((IM.insert i (PAp I []) f, IM.insert i 0 v), (f',v'))
         case ret of
