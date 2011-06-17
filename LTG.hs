@@ -45,7 +45,7 @@ data Card
   | Copy
   | Revive
   | Zombie
-  deriving (Eq, Ord, Enum)
+  deriving (Eq, Ord, Enum,Show,Read)
 
 arity :: Card -> Int
 arity I = 1
@@ -63,23 +63,6 @@ arity Help = 3
 arity Copy = 1
 arity Revive = 1
 arity Zombie = 2
-
-instance Show Card where
-  show I      = "I"
-  show Zero   = "zero"
-  show Succ   = "succ"
-  show Dbl    = "dbl"
-  show Get    = "get"
-  show Put    = "put"
-  show S      = "S"
-  show K      = "K"
-  show Inc    = "inc"
-  show Dec    = "dec"
-  show Attack = "attack"
-  show Help   = "help"
-  show Copy   = "copy"
-  show Revive = "revive"
-  show Zombie = "zombie"
 
 -- ---------------------------------------------------------------------------
 
