@@ -210,29 +210,31 @@ changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
 
-leftApply :: Card -> SlotNum -> M2 ()
+leftApply :: Card -> SlotNum -> M2 (Maybe String)
 leftApply c i = do
   ((f,_),_) <- get
   ret <- runErrorT $ applyCard c [f ! i]
-  let val = case ret of
-              Left err -> PAp I []
-              Right val -> val
+  let (val,err) =
+        case ret of
+          Left err -> (PAp I [], Just err)
+          Right val -> (val, Nothing)
   ((f,v),(f',v')) <- get
   put $ ((IM.insert i val f, v), (f',v'))
-  return ()
+  return err
 
-rightApply :: Card -> SlotNum -> M2 ()
+rightApply :: Card -> SlotNum -> M2 (Maybe String)
 rightApply c i = do
   ((f,_),_) <- get
   ret <- runErrorT $ do
     arg <- evalCard c
     apply (f ! i) arg
-  let val = case ret of
-              Left err -> PAp I []
-              Right val -> val
+  let (val,err) =
+        case ret of
+          Left err -> (PAp I [], Just err)
+          Right val -> (val, Nothing)
   ((f,v),(f',v')) <- get
   put $ ((IM.insert i val f, v), (f',v'))
-  return ()
+  return err
 
 traceState :: M2 ()
 traceState = do

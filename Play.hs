@@ -12,13 +12,13 @@ type Player = (Action, Opponent)
 newtype Opponent = Opponent (GameState -> Player)
 
 act :: Action -> StateT GameState IO ()
-act (False,c,i) = do
+act (flag,c,i) = do
+  let a = if flag then rightApply c i else leftApply c i
   s <- get
-  let (_,s') = runState (leftApply c i) s
-  put s'
-act (True,c,i)  = do
-  s <- get
-  let (_,s') = runState (rightApply c i) s
+  let (err,s') = runState a s
+  case err of
+    Nothing -> return ()
+    Just err -> lift $ putStrLn err
   put s'
 
 play :: Player -> Opponent -> StateT GameState IO ()
