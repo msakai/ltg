@@ -242,9 +242,52 @@ traceState = do
   trace (show (g opponent)) $ return ()
 
 test = evalM $ do
+  -- proponent
   rightApply Zero 0
   traceState
   changeTurn
+
+  -- opponent
   rightApply Inc 0
+  changeTurn
+  traceState
+
+  -- proponent
+  leftApply Succ 0
   traceState
   changeTurn
+
+  -- opponent
+  rightApply Zero 0
+  changeTurn
+  traceState
+
+  -- proponent
+  leftApply Succ 0
+  traceState
+  changeTurn
+
+  -- opponent
+  rightApply Dec 0
+  changeTurn
+  traceState
+
+  -- proponent
+  leftApply Dbl 0
+  traceState
+  changeTurn
+
+  -- opponent
+  rightApply Zero 2
+  changeTurn
+  traceState
+
+  -- proponent
+  leftApply Inc 0
+  traceState
+  changeTurn
+
+  -- opponent
+  leftApply Succ 0
+  changeTurn
+  traceState
