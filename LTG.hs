@@ -78,9 +78,22 @@ instance Show Card where
 -- (field, vitality)
 type PlayerState = (IM.IntMap Value, IM.IntMap Int)
 
+initialPlayerState :: PlayerState
+initialPlayerState =
+  ( IM.fromList [(i, PAp I []) | i <- [0..255]]
+  , IM.fromList [(i, 10000) | i <- [0..255]]
+  )
+
+initialState :: (PlayerState, PlayerState)
+initialState = (initialPlayerState, initialPlayerState)
+
 type Error = String
 
 type M = StateT (PlayerState,PlayerState) (Either Error)
+
+runM :: StateT (PlayerState, PlayerState) m a
+     -> m (a, (PlayerState, PlayerState))
+runM m = runStateT m initialState
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
