@@ -78,12 +78,14 @@ instance Show Card where
 -- (field, vitality)
 type PlayerState = (IM.IntMap Value, IM.IntMap Int)
 
-type M = StateT (PlayerState,PlayerState) Maybe
+type Error = String
+
+type M = StateT (PlayerState,PlayerState) (Either Error)
 
 asInt :: Value -> M Int
 asInt (IntVal n)  = return n
 asInt (PAp Zero []) = return 0
-asInt _ = mzero
+asInt x = lift $ Left $ show x ++ "is not an integer."
 
 evalCard :: Card -> M Value
 evalCard c
@@ -91,7 +93,7 @@ evalCard c
   | otherwise    = return $ PAp c []
 
 apply :: Value -> Value -> M Value
-apply (IntVal _) _ = mzero
+apply (IntVal n) _ = lift $ Left $ "cannot apply integer " ++ show n
 apply (PAp c args) arg
   | arity c == length args + 1 = applyCard c (args++[arg])
   | otherwise = return (PAp c (args ++ [arg]))  
@@ -181,7 +183,7 @@ applyCard Zombie [i,x] = do
   guard $ dead val
   put ((f,v), (IM.insert (255-i) x f', IM.insert (255-i) (-1) v'))
   return $ PAp I []
-applyCard _ _ = mzero
+applyCard c args = lift $ Left $ "cannot handle " ++ show (PAp c args)
 
 changeTurn :: M ()
 changeTurn = do
