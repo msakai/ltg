@@ -12,7 +12,7 @@ player0 = replay
   , (L,Inc,0)
   ]
 
-player1 = replay'
+player1 = replay
   [ (R, Inc, 0)
   , (R, Zero, 0)
   , (R, Dec, 0)

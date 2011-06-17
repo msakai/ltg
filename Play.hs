@@ -6,8 +6,10 @@ import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import LTG
 
-type Player = (Action, Opponent)
-newtype Opponent = Opponent (GameState -> Player)
+-- Player is a (infinite state) Mealy Machine
+-- input is GameState
+-- output is Action
+newtype Player = Player{ trans :: GameState -> (Action, Player) }
 
 act :: Bool -> Action -> StateT GameState IO ()
 act p1 (flag,c,i) = do
@@ -24,12 +26,12 @@ act p1 (flag,c,i) = do
     Nothing -> return ()
     Just err -> lift $ putStrLn err
 
-play :: Player -> Opponent -> StateT GameState IO ()
-play = p1
+play :: Player -> Player -> StateT GameState IO ()
+play = turnA
   where
 
-    p1 :: Player -> Opponent -> StateT GameState IO ()
-    p1 p (Opponent op) = do
+    turnA :: Player -> Player -> StateT GameState IO ()
+    turnA p0 p1 = do
       lift $ putStrLn "========= player 0"
       s <- get
       lift $ printState s
@@ -38,13 +40,14 @@ play = p1
         let s' = execState runZombies s
         put s'
         lift $ printState s'
-      lift $ print $ (fst p)
-      act True (fst p)
-      (a,b) <- get
-      p2 (op (b,a)) (snd p)
+      s <- get
+      let (action,p0') = trans p0 s
+      lift $ print $ action
+      act True action
+      turnB p0 p1 
 
-    p2 :: Player -> Opponent -> StateT GameState IO ()
-    p2 p (Opponent op) = do
+    turnB :: Player -> Player -> StateT GameState IO ()
+    turnB p0 p1 = do
       lift $ putStrLn "========= player 1"
       s <- get
       lift $ printState s
@@ -53,10 +56,11 @@ play = p1
         let s' = swap $ execState runZombies (swap s)
         put s'
         lift $ printState s'
-      lift $ print $ (fst p)
-      act False (fst p)
       s <- get
-      p1 (op s) (snd p)
+      let (action, p1') = trans p1 s
+      lift $ print action      
+      act False action
+      turnA p0 p1'
 
 printState :: GameState -> IO ()
 printState (p1,p2) = do
@@ -72,19 +76,20 @@ swap (a,b) = (b,a)
 only :: Player -> StateT GameState IO ()
 only p = do
   lift $ putStrLn "========= player 0"
-  get >>= \s -> lift (printState s)
-  lift $ print $ (fst p)
-  act True (fst p)
   s <- get
-  case snd p of
-    Opponent f -> only (f s)
+  lift $ printState s
+  let (action,p') = trans p s
+  lift $ print action
+  act True action
+  only p'
 
 -- ---------------------------------------------------------------------------
 
 replay :: [Action] -> Player
-replay (x:xs) = (x, replay' xs)
+replay (x:xs) = Player (\_ -> (x, replay xs))
 
-replay' :: [Action] -> Opponent
-replay' xs = Opponent (\_ -> replay xs)
+-- obsoleted
+replay' :: [Action] -> Player
+replay' = replay
 
 -- ---------------------------------------------------------------------------
