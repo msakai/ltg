@@ -15,17 +15,22 @@ type Action = (LR, Card, SlotNum)
 type Player = (Action, Opponent)
 newtype Opponent = Opponent (GameState -> Player)
 
-act :: Action -> StateT GameState IO ()
-act (flag,c,i) = do
+act :: Bool -> Action -> StateT GameState IO ()
+act p1 (flag,c,i) = do
   let a = case flag of 
             L -> leftApply c i
             R -> rightApply c i
   s <- get
-  let (err,s') = runState a s
+  let (err,s') =
+        if p1
+        then runState a s
+        else
+          case runState a (snd s, fst s) of
+            (err,s') -> (err, (snd s', fst s'))
+  put s'
   case err of
     Nothing -> return ()
     Just err -> lift $ putStrLn err
-  put s'
 
 play :: Player -> Opponent -> StateT GameState IO ()
 play = p1
@@ -38,16 +43,48 @@ play = p1
 
     p1 :: Player -> Opponent -> StateT GameState IO ()
     p1 p (Opponent op) = do
-      lift $ putStrLn "========= player 1"
+      lift $ putStrLn "========= player 0"
       get >>= \s -> lift (printState s)
-      act (fst p)
+      lift $ print $ (fst p)
+      act True (fst p)
       (a,b) <- get
       p2 (op (b,a)) (snd p)
 
     p2 :: Player -> Opponent -> StateT GameState IO ()
     p2 p (Opponent op) = do
-      lift $ putStrLn "========= player 2"
+      lift $ putStrLn "========= player 1"
       get >>= \s -> lift (printState s)
-      act (fst p)
+      lift $ print $ (fst p)
+      act False (fst p)
       s <- get
       p1 (op s) (snd p)
+
+-- ---------------------------------------------------------------------------
+
+replay :: [Action] -> Player
+replay (x:xs) = (x, replay' xs)
+
+replay' :: [Action] -> Opponent
+replay' xs = Opponent (\_ -> replay xs)
+
+-- ---------------------------------------------------------------------------
+
+player0 = replay
+  [ (R,Zero,0)
+  , (L,Succ,0)
+  , (L,Succ,0)
+  , (L,Dbl,0)
+  , (L,Inc,0)
+  ]
+
+player1 = replay'
+  [ (R, Inc, 0)
+  , (R, Zero, 0)
+  , (R, Dec, 0)
+  , (R, Zero, 2)
+  , (L, Succ, 0)
+  ]
+
+session1 = runStateT (play player0 player1) initialState
+
+-- ---------------------------------------------------------------------------
