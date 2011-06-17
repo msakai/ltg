@@ -7,6 +7,8 @@ import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import Debug.Trace
 
+-- ---------------------------------------------------------------------------
+
 type SlotNum = Int
 
 isValidSlotNum :: Int -> Bool
@@ -78,6 +80,8 @@ instance Show Card where
   show Revive = "revive"
   show Zombie = "zombie"
 
+-- ---------------------------------------------------------------------------
+
 -- (field, vitality)
 type PlayerState = (IM.IntMap Value, IM.IntMap Int)
 
@@ -91,6 +95,8 @@ type GameState = (PlayerState, PlayerState)
 
 initialState :: GameState
 initialState = (initialPlayerState, initialPlayerState)
+
+-- ---------------------------------------------------------------------------
 
 type M = ErrorT String (State GameState)
 
@@ -209,19 +215,15 @@ checkAlive i = do
   when (dead (v ! i)) $
     throwError $ "slot " ++ show i ++ " is not alive"
 
-type M2 = State GameState
-
-changeTurn :: M2 ()
-changeTurn = do
-  (proponent, opponent) <- get
-  put (opponent, proponent)
-
+-- ---------------------------------------------------------------------------
 
 data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
 type Action = (LR, Card, SlotNum)
 
-leftOrRightApply :: LR -> Card -> SlotNum -> M2 (Maybe String)
-leftOrRightApply lr c i = do
+type M2 = State GameState
+
+doAction :: Action -> M2 (Maybe String)
+doAction (lr,c,i) = do
   ((f,_),_) <- get
   ret <- runErrorT $ do
     checkAlive i
@@ -237,11 +239,10 @@ leftOrRightApply lr c i = do
   put $ ((IM.insert i val f, v), (f',v'))
   return err
 
-leftApply :: Card -> SlotNum -> M2 (Maybe String)
-leftApply = leftOrRightApply L
-
-rightApply :: Card -> SlotNum -> M2 (Maybe String)
-rightApply = leftOrRightApply R
+changeTurn :: M2 ()
+changeTurn = do
+  (proponent, opponent) <- get
+  put (opponent, proponent)
 
 traceState :: M2 ()
 traceState = do
@@ -252,53 +253,57 @@ traceState = do
   trace (show (g proponent)) $ return ()
   trace (show (g opponent)) $ return ()
 
+-- ---------------------------------------------------------------------------
+
 test = flip runState initialState $ do
   -- proponent
-  rightApply Zero 0
+  doAction (R, Zero, 0)
   traceState
   changeTurn
 
   -- opponent
-  rightApply Inc 0
+  doAction (R, Inc, 0)
   changeTurn
   traceState
 
   -- proponent
-  leftApply Succ 0
+  doAction (L, Succ, 0)
   traceState
   changeTurn
 
   -- opponent
-  rightApply Zero 0
+  doAction (R, Zero, 0)
   changeTurn
   traceState
 
   -- proponent
-  leftApply Succ 0
+  doAction (L, Succ, 0)
   traceState
   changeTurn
 
   -- opponent
-  rightApply Dec 0
+  doAction (R, Dec, 0)
   changeTurn
   traceState
 
   -- proponent
-  leftApply Dbl 0
+  doAction (L, Dbl, 0)
   traceState
   changeTurn
 
   -- opponent
-  rightApply Zero 2
+  doAction (R, Zero, 2)
   changeTurn
   traceState
 
   -- proponent
-  leftApply Inc 0
+  doAction (L, Inc, 0)
   traceState
   changeTurn
 
   -- opponent
-  leftApply Succ 0
+  doAction (L, Succ, 0)
   changeTurn
   traceState
+
+-- ---------------------------------------------------------------------------

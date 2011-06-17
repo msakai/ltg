@@ -11,15 +11,13 @@ newtype Opponent = Opponent (GameState -> Player)
 
 act :: Bool -> Action -> StateT GameState IO ()
 act p1 (flag,c,i) = do
-  let a = case flag of 
-            L -> leftApply c i
-            R -> rightApply c i
+  let g = runState $ doAction (flag,c,i)
   s <- get
   let (err,s') =
         if p1
-        then runState a s
+        then g s
         else
-          case runState a (snd s, fst s) of
+          case g (snd s, fst s) of
             (err,s') -> (err, (snd s', fst s'))
   put s'
   case err of
