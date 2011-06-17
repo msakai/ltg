@@ -246,10 +246,10 @@ applyCard Copy [i] = do
 applyCard Revive [i] = do
   i <- asInt i
   checkValidSlotNum i
-  ((f,v),(f',v')) <- get
+  (f,v) <- getPlayer0
   let val = v ! i
   when (val <= 0) $
-    put ((f, IM.insert i 1 v), (f',v'))
+    putPlayer0 (f, IM.insert i 1 v)
   return $ PAp I []
 applyCard Zombie [i,x] = do
   i <- asInt i
@@ -268,7 +268,7 @@ checkValidSlotNum i =
 
 checkAlive :: SlotNum -> M ()
 checkAlive i = do
-  ((_,v),_) <- get
+  (_,v) <- getPlayer0
   when (dead (v ! i)) $
     throwError $ "slot " ++ show i ++ " is not alive"
 
