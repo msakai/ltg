@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module LTG where
 
 import Control.Monad
@@ -105,7 +106,7 @@ initialState = (initialPlayerState, initialPlayerState)
 
 type M = ReaderT Bool (ErrorT String (State (GameState, Int)))
 
-runM :: Bool -> M a -> State GameState (Either String a)
+runM :: MonadState GameState m => Bool -> M a -> m (Either String a)
 runM zombieMode m = do
   s <- get
   case runState (runErrorT (runReaderT m zombieMode)) (s,0) of
@@ -291,8 +292,9 @@ checkAlive i = do
 data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
 type Action = (LR, Card, SlotNum)
 
-doAction :: Action -> State GameState (Maybe String)
-doAction (lr,c,i) = do
+doAction :: MonadState GameState m => Bool -> Action -> m (Maybe String)
+doAction isPlayer0 (lr,c,i) = do
+  unless isPlayer0 swapPlayer
   (f,_) <- gets fst
   ret <- runM False $ do
     checkAlive i
@@ -307,11 +309,13 @@ doAction (lr,c,i) = do
           Right val -> (val, Nothing)
   ((f,v),(f',v')) <- get
   put ((IM.insert i val f, v), (f',v'))
+  unless isPlayer0 swapPlayer
   return err
 
-runZombies :: State GameState [String]
-runZombies = do
-  liftM concat $ forM [0..255] $ \i -> do
+runZombies :: MonadState GameState m => Bool -> m [String]
+runZombies isPlayer0 = do
+  unless isPlayer0 swapPlayer
+  xs <- liftM concat $ forM [0..255] $ \i -> do
     (f,v) <- gets fst
     if (v ! i == -1)
       then do
@@ -323,5 +327,13 @@ runZombies = do
           Right _  -> return [printf "zombie(%d)" i]
       else
         return []
+  unless isPlayer0 swapPlayer
+  return xs
+
+swapPlayer :: MonadState GameState m => m ()
+swapPlayer = modify swap
+  where
+    swap :: (a,b) -> (b,a)
+    swap (a,b) = (b,a)
 
 -- ---------------------------------------------------------------------------
