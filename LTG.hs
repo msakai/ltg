@@ -52,7 +52,7 @@ arity Zero = 0
 arity Succ = 1
 arity Dbl = 1
 arity Get = 1
-arity Put = 2
+arity Put = 1
 arity S = 3
 arity K = 2
 arity Inc = 1
@@ -130,7 +130,7 @@ applyCard Get [i] = do
   checkValidSlotNum i
   ((f,v),(f',v')) <- get
   return $ f ! i
-applyCard Put [x,y] = return y
+applyCard Put [x] = return (PAp I [])
 applyCard S [f,g,x] = do
   h <- apply f x
   y <- apply g x
