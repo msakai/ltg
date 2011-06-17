@@ -178,7 +178,9 @@ applyCard Help [i,j,n] = do
   checkValidSlotNum i
   checkValidSlotNum j
   ((f,v),(f',v')) <- get
-  let v2 = IM.insert i (max 0 ((v ! i) - n)) v
+  let val1 = v ! i
+  when (val1 < n) $ throwError "help error"
+  let v2 = IM.insert i (val1 - n) v
       v3 = IM.insert j (min 0xFFFF ((v2 ! j) + ((n*11) `div` 10))) v2
   put ((f,v3), (f',v'))
   return $ PAp I []
