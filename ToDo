@@ -7,6 +7,9 @@
  □ (L)ark の実装
  □ Yコンビネータの実装
  □ 関数の反復適用コンビネータ
+ □ pair, cons, cdr (rf. SICP)
+ □ isZero
+ □ prev (subtract 1)
 
 ○ 算術演算子の実装
  □ 羃算の実装
