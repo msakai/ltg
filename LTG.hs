@@ -6,7 +6,7 @@ import Control.Monad.Error
 import Control.Monad.Reader
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
-import Debug.Trace
+import Text.Printf
 
 -- ---------------------------------------------------------------------------
 
@@ -291,115 +291,37 @@ checkAlive i = do
 data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
 type Action = (LR, Card, SlotNum)
 
-type M2 = State GameState
-
-doAction :: Action -> M2 (Maybe String)
+doAction :: Action -> State GameState (Maybe String)
 doAction (lr,c,i) = do
-  ((f,_),_) <- get
+  (f,_) <- gets fst
   ret <- runM False $ do
     checkAlive i
-    c <- evalCard c    
+    c <- evalCard c
+    let s = f ! i
     case lr of
-      L -> apply c (f ! i)
-      R -> apply (f ! i) c        
+      L -> apply c s
+      R -> apply s c
   let (val,err) =
         case ret of
           Left err -> (PAp I [], Just err)
           Right val -> (val, Nothing)
   ((f,v),(f',v')) <- get
-  put $ ((IM.insert i val f, v), (f',v'))
+  put ((IM.insert i val f, v), (f',v'))
   return err
 
-runZombies :: M2 [String]
+runZombies :: State GameState [String]
 runZombies = do
   liftM concat $ forM [0..255] $ \i -> do
-    ((f,v),_) <- get
+    (f,v) <- gets fst
     if (v ! i == -1)
       then do
         ret <- runM True $ apply (f ! i) (PAp I [])
         ((f,v),(f',v')) <- get
         put ((IM.insert i (PAp I []) f, IM.insert i 0 v), (f',v'))
         case ret of
-          Left err -> return [err]
-          Right _ -> return []
+          Left err -> return [printf "zombie(%d): %s" i err]
+          Right _  -> return [printf "zombie(%d)" i]
       else
         return []
-
-changeTurn :: M2 ()
-changeTurn = do
-  (proponent, opponent) <- get
-  put (opponent, proponent)
-
-traceState :: M2 ()
-traceState = do
-  (proponent, opponent) <- get
-  let g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
-                      , f ! i /= PAp I [] || v ! i /= 10000]
-  trace "=========" $ return ()
-  trace (show (g proponent)) $ return ()
-  trace (show (g opponent)) $ return ()
-
--- ---------------------------------------------------------------------------
-
-test = flip runState initialState $ do
-  -- proponent
-  runZombies
-  doAction (R, Zero, 0)
-  traceState
-  changeTurn
-
-  -- opponent
-  runZombies
-  doAction (R, Inc, 0)
-  changeTurn
-  traceState
-
-  -- proponent
-  runZombies
-  doAction (L, Succ, 0)
-  traceState
-  changeTurn
-
-  -- opponent
-  runZombies
-  doAction (R, Zero, 0)
-  changeTurn
-  traceState
-
-  -- proponent
-  runZombies
-  doAction (L, Succ, 0)
-  traceState
-  changeTurn
-
-  -- opponent
-  runZombies
-  doAction (R, Dec, 0)
-  changeTurn
-  traceState
-
-  -- proponent
-  runZombies
-  doAction (L, Dbl, 0)
-  traceState
-  changeTurn
-
-  -- opponent
-  runZombies
-  doAction (R, Zero, 0)
-  changeTurn
-  traceState
-
-  -- proponent
-  runZombies
-  doAction (L, Inc, 0)
-  traceState
-  changeTurn
-
-  -- opponent
-  runZombies
-  doAction (L, Succ, 0)
-  changeTurn
-  traceState
 
 -- ---------------------------------------------------------------------------
