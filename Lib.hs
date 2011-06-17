@@ -11,3 +11,7 @@ makeNum n to =
   , (R, Zero, to)
   ] ++
   replicate n (L, Succ, to)
+
+apply :: SlotNum -> [Action]
+apply res = 
+  [(R,Get,res),(L,K,res),(L,S,res),(R,Succ,res),(L,S,res),(R,Get,res),(R,Zero,res)]
