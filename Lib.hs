@@ -2,10 +2,12 @@ module Lib where
 
 import LTG
 
-move :: SlotNum -> SlotNum -> [Action]
-move from to =
+copy :: SlotNum -> SlotNum -> [Action]
+copy from to = makeNum from to ++ [(L, Get, to)]
+
+makeNum :: Int -> SlotNum -> [Action]
+makeNum n to = 
   [ (L, Put, to)
   , (R, Zero, to)
   ] ++
-  replicate from (L, Succ, to) ++
-  [ (L, Get, to) ]
+  replicate n (L, Succ, to)
