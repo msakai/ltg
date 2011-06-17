@@ -2,6 +2,7 @@ module LTG where
 
 import Control.Monad
 import Control.Monad.State
+import Control.Monad.Error
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 
@@ -88,9 +89,7 @@ initialPlayerState =
 initialState :: (PlayerState, PlayerState)
 initialState = (initialPlayerState, initialPlayerState)
 
-type Error = String
-
-type M = StateT (PlayerState,PlayerState) (Either Error)
+type M = StateT (PlayerState,PlayerState) (Either String)
 
 runM :: StateT (PlayerState, PlayerState) m a
      -> m (a, (PlayerState, PlayerState))
@@ -123,7 +122,7 @@ applyCard Dbl [n] = do
   return $ IntVal $ min (n*2) 0xFFFF
 applyCard Get [i] = do
   i <- asInt i
-  guard $ isValidSlotNum i
+  checkValidSlotNum i
   ((f,v),(f',v')) <- get
   return $ f ! i
 applyCard Put [x,y] = return y
@@ -135,7 +134,7 @@ applyCard S [f,g,x] = do
 applyCard K [x,y] = return x
 applyCard Inc [i] = do
   i <- asInt i
-  guard $ isValidSlotNum i
+  checkValidSlotNum i
   ((f,v),(f',v')) <- get
   let val = v ! i
   when (0 < val && val < 0xFFFF) $
@@ -143,7 +142,7 @@ applyCard Inc [i] = do
   return $ PAp I []
 applyCard Dec [i] = do
   i <- asInt i
-  guard $ isValidSlotNum i
+  checkValidSlotNum i
   ((f,v),(f',v')) <- get
   let val = v' ! (255-i)
   when (0 < val && val < 0xFFFF) $
@@ -153,8 +152,8 @@ applyCard Attack [i,j,n] = do
   i <- asInt i
   j <- asInt j
   n <- asInt n
-  guard $ isValidSlotNum i
-  guard $ isValidSlotNum j
+  checkValidSlotNum i
+  checkValidSlotNum j
   ((f,v),(f',v')) <- get
   let val1 = v ! i
       val2 = v' ! (255 - j)
@@ -168,8 +167,8 @@ applyCard Help [i,j,n] = do
   i <- asInt i
   j <- asInt j
   n <- asInt n
-  guard $ isValidSlotNum i
-  guard $ isValidSlotNum j
+  checkValidSlotNum i
+  checkValidSlotNum j
   ((f,v),(f',v')) <- get
   let v2 = IM.insert i (max 0 ((v ! i) - n)) v
       v3 = IM.insert j (min 0xFFFF ((v2 ! j) + ((n*11) `div` 10))) v2
@@ -177,12 +176,12 @@ applyCard Help [i,j,n] = do
   return $ PAp I []
 applyCard Copy [i] = do
   i <- asInt i
-  guard $ isValidSlotNum i
+  checkValidSlotNum i
   ((f,v),(f',v')) <- get
   return $ f' ! i
 applyCard Revive [i] = do
   i <- asInt i
-  guard $ isValidSlotNum i
+  checkValidSlotNum i
   ((f,v),(f',v')) <- get
   let val = v ! i
   when (val <= 0) $
@@ -192,13 +191,17 @@ applyCard Zombie [i,x] = do
   i <- asInt i
   ((f,v),(f',v')) <- get
   let val = v' ! (255-i)
-  guard $ dead val
+  unless (dead val) $ lift $ Left $ "not dead"
   put ((f,v), (IM.insert (255-i) x f', IM.insert (255-i) (-1) v'))
   return $ PAp I []
 applyCard c args = lift $ Left $ "cannot handle " ++ show (PAp c args)
+
+checkValidSlotNum :: SlotNum -> M ()
+checkValidSlotNum i = 
+  unless (isValidSlotNum i) $
+    lift $ Left $ show i ++ " is not a valid slot number"
 
 changeTurn :: M ()
 changeTurn = do
   (proponent, opponent) <- get
   put (opponent, proponent)
-
