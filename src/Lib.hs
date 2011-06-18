@@ -129,7 +129,7 @@ overloadB' s = overloading s $ initB' s
 
 -- (C)ardinal: flip    S(BBS)(KK)
 initC',overloadC' :: SlotNum -> [Action]
-initC' s = mocking _fun ++ setArg _B ++ setRes ++ doApply _res -- s[_res] = BB
+initC' sn = mocking _fun ++ setArg _B ++ setRes ++ doApply _res -- s[_res] = BB
          ++ [(R,S,_res)                                        -- s[_res] = BBS
             ,(L,S,_res)                                        -- s[_res] = S(BBS)
             ,(L,Put,_arg)
@@ -138,10 +138,28 @@ initC' s = mocking _fun ++ setArg _B ++ setRes ++ doApply _res -- s[_res] = BB
          ++ setFun _res
          ++ setRes
          ++ doApply _res
-         ++ copy' _res s
-overloadC' s = overloading s $ initC' s
+         ++ copy' _res sn
+overloadC' sn = overloading sn $ initC' sn
 
 initC,overloadC :: [Action]
 initC = initC' _C
 overloadC = overloading _C $ initC
 
+-- (L)ark CBM
+initY', overloadY' :: SlotNum -> [Action]
+initY,overloadY :: [Action]
+
+initL' sn = setArg _B ++ setFun _C ++ setRes ++ doApply _res -- s[_res] = CB
+         ++ mocking' _arg                                   -- s[_arg] = M
+         ++ setFun   _res                                   -- s[_fun] = CB
+         ++ doApply  _res                                   -- s[_res] = CBM
+         ++ copy' _res sn
+overloadL' sn = overloading sn $ initL' sn
+
+initY' sn = initL' _res ++ setFun _res ++ [(L,S,_fun)] -- s[_fun] = SL
+          ++ setArg _res                               -- s[_arg] = L
+          ++ setRes ++ doApply _res                    -- s[_res] = SLL
+          ++ copy' _res sn
+overloadY' sn = overloading sn $ initY' sn
+initY = initY' _Y
+overloadY = overloading _Y $ initY
