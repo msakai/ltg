@@ -126,9 +126,22 @@ initB' s = [(R,K,s),(R,S,s)  -- (KS)
            ]
 overloadB' s = overloading s $ initB' s
 
-{-
+
 -- (C)ardinal: flip    S(BBS)(KK)
 initC',overloadC' :: SlotNum -> [Action]
-initC' s = mocking _fun ++ setArg _B ++ setRes ++ doApply
+initC' s = mocking _fun ++ setArg _B ++ setRes ++ doApply _res -- s[_res] = BB
+         ++ [(R,S,_res)                                        -- s[_res] = BBS
+            ,(L,S,_res)                                        -- s[_res] = S(BBS)
+            ,(L,Put,_arg)
+            ,(R,K,_arg),(R,K,_arg)                             -- s[_arg] = (KK)
+            ]
+         ++ setFun _res
+         ++ setRes
+         ++ doApply _res
+         ++ copy' _res s
 overloadC' s = overloading s $ initC' s
--}
+
+initC,overloadC :: [Action]
+initC = initC' _C
+overloadC = overloading _C $ initC
+
