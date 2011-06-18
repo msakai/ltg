@@ -1,4 +1,8 @@
-module Play where
+module Play
+  ( play
+  , only
+  , runPlayer
+  ) where
 
 import Control.Monad
 import Control.Monad.State
@@ -9,14 +13,7 @@ import System.IO
 
 import LTG
 import Eval
-
-{-
-Player is a (infinite state) Mealy Machine
-input: GameState
-output: Action
-GameStateは(自分,相手)の順番
--}
-newtype Player = Player{ trans :: GameState -> (Action, Player) }
+import Player
 
 act :: Bool -> Action -> StateT GameState IO ()
 act isPlayer0 action = do
@@ -67,9 +64,6 @@ only p = do
   lift $ print action
   act True action
   only p'
-
-replay :: [Action] -> Player
-replay (x:xs) = Player (\_ -> (x, replay xs))
 
 -- ---------------------------------------------------------------------------
 

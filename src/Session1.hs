@@ -2,7 +2,8 @@ module Session1 where
 
 import Control.Monad.State
 import LTG
-import Play
+import Player
+import Play (play)
 
 player0 = replay
   [ (R,Zero,0)

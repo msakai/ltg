@@ -1,10 +1,11 @@
-module SamplePlayer1 where
+module SamplePlayer1 (samplePlayer1) where
 
 import Control.Monad.State
 import qualified Data.IntMap as IM
 import Data.Maybe
 import LTG
-import Play
+import Player
+import Play (play)
 
 {-
 相手の生きているスロットに対してひたすら dec するだけのプレイヤー
