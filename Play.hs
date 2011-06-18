@@ -7,9 +7,12 @@ import Data.IntMap ((!))
 import System.Environment (getArgs)
 import LTG
 
--- Player is a (infinite state) Mealy Machine
--- input is GameState
--- output is Action
+{-
+Player is a (infinite state) Mealy Machine
+input: GameState
+output: Action
+GameStateは(自分,相手)の順番
+-}
 newtype Player = Player{ trans :: GameState -> (Action, Player) }
 
 act :: Bool -> Action -> StateT GameState IO ()
@@ -47,7 +50,7 @@ play = go True
           act isPlayer0 action
           go False p0' p1 
         else do
-          let (action, p1') = trans p1 s
+          let (action, p1') = trans p1 (swap s)
           lift $ print action      
           act isPlayer0 action
           go True p0 p1'
@@ -98,7 +101,7 @@ runPlayer p = flip evalStateT initialState $ do
       prop :: Player -> StateT GameState IO ()
       prop p = do
         s <- get
-        let ((lr,card,slot), p') = trans p s
+        let ((lr,card,slot), p') = trans p (if isPlayer0 then s else swap s)
         case lr of
           L -> do
             lift $ print 1
@@ -112,3 +115,8 @@ runPlayer p = flip evalStateT initialState $ do
   if isPlayer0
     then opp p
     else prop p
+
+-- ---------------------------------------------------------------------------
+
+swap :: (a,b) -> (b,a)
+swap (a,b) = (b,a)
