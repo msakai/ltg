@@ -17,7 +17,9 @@ import Player
 
 act :: Bool -> Action -> StateT GameState IO ()
 act isPlayer0 action = do
-  err <- doAction isPlayer0 action
+  s <- get
+  let (err, s') = doAction isPlayer0 action s
+  put s'
   case err of
     Nothing -> return ()
     Just err -> lift $ putStrLn err
@@ -28,10 +30,11 @@ zom isPlayer0 = do
   let s2 = if isPlayer0 then fst s else snd s
   when (-1 `elem` IM.elems (snd s2)) $ do
     lift $ putStrLn "Zombie running ..."
-    msgs <- runZombies isPlayer0
-    lift $ mapM_ putStrLn msgs
     s <- get
-    lift $ printState s
+    let (msgs, s') = runZombies isPlayer0 s
+    put s'
+    lift $ mapM_ putStrLn msgs
+    lift $ printState s'
 
 play :: Player -> Player -> StateT GameState IO ()
 play = go True

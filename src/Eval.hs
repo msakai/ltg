@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Eval
   ( Eval
   , runEval
@@ -26,7 +25,7 @@ EvalMonadの中では、手順側のプレイヤーの状態が、GameStateのfs
 -}
 type Eval = ReaderT Bool (ErrorT String (State (GameState, Int)))
 
-runEval :: MonadState GameState m => Bool -> Eval a -> m (Either String a)
+runEval :: Bool -> Eval a -> State GameState (Either String a)
 runEval zombieMode m = do
   s <- get
   case runState (runErrorT (runReaderT m zombieMode)) (s,0) of
@@ -215,8 +214,8 @@ checkAlive i = do
 引数で現在がisPlayer0によって先手番かどうかを判定。
 -}
 
-doAction :: MonadState GameState m => Bool -> Action -> m (Maybe String)
-doAction isPlayer0 (lr,c,i) = do
+doAction :: Bool -> Action -> GameState -> (Maybe String, GameState)
+doAction isPlayer0 (lr,c,i) s = flip runState s $ do
   unless isPlayer0 swapPlayer
   (f,_) <- gets fst
   ret <- runEval False $ do
@@ -235,8 +234,8 @@ doAction isPlayer0 (lr,c,i) = do
   unless isPlayer0 swapPlayer
   return err
 
-runZombies :: MonadState GameState m => Bool -> m [String]
-runZombies isPlayer0 = do
+runZombies :: Bool -> GameState -> ([String], GameState)
+runZombies isPlayer0 s = flip runState s $ do
   unless isPlayer0 swapPlayer
   xs <- liftM concat $ forM [0..255] $ \i -> do
     (f,v) <- gets fst
@@ -253,7 +252,7 @@ runZombies isPlayer0 = do
   unless isPlayer0 swapPlayer
   return xs
 
-swapPlayer :: MonadState GameState m => m ()
+swapPlayer :: State GameState ()
 swapPlayer = modify swap
   where
     swap :: (a,b) -> (b,a)
