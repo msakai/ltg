@@ -5,6 +5,7 @@ import Control.Monad.State
 import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import System.Environment (getArgs)
+import System.IO
 import LTG
 
 {-
@@ -56,9 +57,12 @@ play = go True
           go True p0 p1'
 
 printState :: GameState -> IO ()
-printState (p1,p2) = do
-  print $ g p1
-  print $ g p2
+printState = hPrintState stdout
+
+hPrintState :: Handle -> GameState -> IO ()
+hPrintState h (p1,p2) = do
+  hPrint h $ g p1
+  hPrint h $ g p2
   where
     g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
                     , f ! i /= PAp I [] || v ! i /= 10000]
@@ -83,38 +87,55 @@ runPlayer :: Player -> IO ()
 runPlayer p = flip evalStateT initialState $ do
   args <- lift getArgs
   let isPlayer0 = (args /= ["1"])
-
+      name = if isPlayer0 then "player0" else "player1"
+  let
       opp :: Player -> StateT GameState IO ()
       opp p = do
-        lr <- lift getLine
-        case lr of
-          "1" -> do
-            card <- lift $ liftM cardOfName getLine
-            slot <- lift $ readLn
-            act (not isPlayer0) (L, card, slot)
-          "2" -> do
-            slot <- lift $ readLn
-            card <- lift $ liftM cardOfName getLine
-            act (not isPlayer0) (R, card, slot)
+        action <- lift readAction 
+        act (not isPlayer0) action
         prop p
 
       prop :: Player -> StateT GameState IO ()
       prop p = do
         s <- get
-        let ((lr,card,slot), p') = trans p (if isPlayer0 then s else swap s)
-        case lr of
-          L -> do
-            lift $ print 1
-            lift $ putStrLn $ cardName card
-            lift $ print slot
-          R -> do
-            lift $ putStrLn "2"
-            lift $ print slot
-            lift $ putStrLn $ cardName card
+        let (action, p') = trans p (if isPlayer0 then s else swap s)
+{-
+        lift $ hPrint stderr $ name ++ " is thiking ..."
+        lift $ hPrintState stderr s
+        lift $ hFlush stderr
+-}
+        lift $ writeAction action
+        act isPlayer0 action
         opp p'
   if isPlayer0
-    then opp p
-    else prop p
+    then prop p
+    else opp p
+
+readAction :: IO Action
+readAction = do
+  lr <- getLine
+  case lr of
+    "1" -> do
+      card <- liftM cardOfName getLine
+      slot <- readLn
+      return (L, card, slot)
+    "2" -> do
+      slot <- readLn
+      card <- liftM cardOfName getLine
+      return (R, card, slot)
+
+writeAction :: Action -> IO ()
+writeAction (lr,card,slot) = do
+  case lr of
+    L -> do
+      print 1
+      putStrLn (cardName card)
+      print slot
+    R -> do
+      print 2
+      print slot
+      putStrLn (cardName card)
+  hFlush stdout
 
 -- ---------------------------------------------------------------------------
 
