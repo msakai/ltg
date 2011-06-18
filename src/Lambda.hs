@@ -16,14 +16,28 @@ data Term
     | Lambda Var Term
     deriving Show
 
-{-
-TODO: Term‚Å‚Í‚È‚­LTG‚ÌValue‚Ö‚ÆƒRƒ“ƒpƒCƒ‹‚µ‚½‚¢
--}
-compile :: Term -> Term
-compile (Int i)      = Int i
-compile (Card c)     = Card c
-compile (App a b)    = app (compile a) (compile b)
-compile (Lambda v a) = removeVar v a
+compile :: Term -> Value
+compile = toValue . compile'
+
+toValue :: Term -> Value
+toValue (Int i)   = IntVal i
+toValue (Card c)  = PAp c []
+toValue (App x y) =
+  case toValue x of
+    IntVal _ -> error "cannot apply integer value"
+    PAp c args
+      | length args + 1 >= arity c ->
+          error "arity exceeded" -- FIXME: arityˆÈã‚É‚È‚é‚Æ‚«‚É‚Ç‚¤‚·‚é?
+      | otherwise ->
+          PAp c (args ++ [toValue y])
+toValue (Var v)      = error "should not happen"
+toValue (Lambda v a) = error "should not happen"
+
+compile' :: Term -> Term
+compile' (Int i)      = Int i
+compile' (Card c)     = Card c
+compile' (App a b)    = app (compile' a) (compile' b)
+compile' (Lambda v a) = removeVar v a
 
 removeVar :: Var -> Term -> Term
 removeVar x (Var y) | x==y = Card I
