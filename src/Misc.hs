@@ -1,4 +1,7 @@
 -- 思いつきで実装してみた関数などの置き場
+--
+-- 適当な名前を思いつかなくて長い名前になっているものもあります……。
+-- 利用する際に長い名前が邪魔だと思ったら、適当に名前を変えてみて下さい。
 module Misc where
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
