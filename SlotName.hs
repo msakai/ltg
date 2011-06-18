@@ -1,5 +1,6 @@
 module SlotName ( _arg
                 , _fun
+                , _res
                 , _apply
                 , _copy
                 , _makeNum
@@ -28,9 +29,10 @@ module SlotName ( _arg
 import LTG
 
 slotnames :: [SlotNum]
-slotnames@(_arg          -- 引数レジスタ                               
-           :_fun          -- 関数レジスタ        
-           :_apply        -- 適用コンビネータ    
+slotnames@(_arg           -- 引数レジスタ                               
+           :_fun          -- 関数レジスタ
+           :_res          -- 関数適用結果レジスタ        
+           :_apply        -- 適用コンビネータ
            :_copy         -- 複写コンビネータ    
            :_makeNum      -- 作数コンビネータ    
            :_B            -- 合成コンビネータ    
