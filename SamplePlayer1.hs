@@ -1,5 +1,6 @@
 module SamplePlayer1 where
 
+import Control.Monad.State
 import qualified Data.IntMap as IM
 import Data.Maybe
 import LTG
@@ -14,14 +15,14 @@ samplePlayer1 = Player samplePlayer1'
 
 samplePlayer1' :: GameState -> (Action, Player)
 samplePlayer1' (p0,p1) =
-  case tryToMakeN target p0 of
+  case tryToMakeN (255-target) p0 of
     Left action -> ( action, samplePlayer1 )
     Right i -> ( (L, Dec, i), samplePlayer1 )
   where
     target = findAliveTarget p1
 
 findAliveTarget :: PlayerState -> Int
-findAliveTarget (f,v) = head [i | (i, vit) <- IM.toList v, alive vit]
+findAliveTarget (f,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
 
 findValue :: Value -> PlayerState -> Maybe Int
 findValue val (f,v) = listToMaybe [i | (i, val') <- IM.toList f, val==val', alive (v IM.! i)]
@@ -40,3 +41,9 @@ tryToMakeN n p0 =
         case findValue (PAp I []) p0 of
           Just idSlot -> Left (R, Zero, idSlot)
           Nothing -> Left (L, Put, 0)
+
+testSession :: IO ()
+testSession = do
+  runStateT (play samplePlayer1 samplePlayer1) initialState
+  return ()
+
