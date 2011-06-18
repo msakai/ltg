@@ -79,12 +79,14 @@ runPlayer p = flip evalStateT initialState $ do
   let
       opp :: Player -> StateT GameState IO ()
       opp p = do
+        zom (not isPlayer0)
         action <- lift readAction 
         act (not isPlayer0) action
         prop p
 
       prop :: Player -> StateT GameState IO ()
       prop p = do
+        zom isPlayer0
         s <- get
         let (action, p') = trans p (if isPlayer0 then s else swap s)
 {-
