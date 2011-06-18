@@ -1,4 +1,4 @@
-module Session1 where
+module Session3 where
 
 import Control.Monad.State
 import LTG
