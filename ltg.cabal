@@ -12,6 +12,7 @@ Stability:      alpha
 -- package-url:    
 synopsis:       ICFP Programming Contest's Program
 Description:
+HS-Source-Dirs: src
 
 Tested-with: GHC == 7.0.3
 
