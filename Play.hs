@@ -58,17 +58,6 @@ play = go True
           act isPlayer0 action
           go True p0 p1'
 
-printState :: GameState -> IO ()
-printState = hPrintState stdout
-
-hPrintState :: Handle -> GameState -> IO ()
-hPrintState h (p1,p2) = do
-  hPrint h $ g p1
-  hPrint h $ g p2
-  where
-    g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
-                    , f ! i /= PAp I [] || v ! i /= 10000]
-
 only :: Player -> StateT GameState IO ()
 only p = do
   lift $ putStrLn "========= player 0"
@@ -112,32 +101,6 @@ runPlayer p = flip evalStateT initialState $ do
   if isPlayer0
     then prop p
     else opp p
-
-readAction :: IO Action
-readAction = do
-  lr <- getLine
-  case lr of
-    "1" -> do
-      card <- liftM cardOfName getLine
-      slot <- readLn
-      return (L, card, slot)
-    "2" -> do
-      slot <- readLn
-      card <- liftM cardOfName getLine
-      return (R, card, slot)
-
-writeAction :: Action -> IO ()
-writeAction (lr,card,slot) = do
-  case lr of
-    L -> do
-      print 1
-      putStrLn (cardName card)
-      print slot
-    R -> do
-      print 2
-      print slot
-      putStrLn (cardName card)
-  hFlush stdout
 
 -- ---------------------------------------------------------------------------
 

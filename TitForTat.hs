@@ -6,7 +6,6 @@ module Main where
 import Control.Monad
 import System.Environment (getArgs)
 import LTG
-import Play
 
 main :: IO ()
 main =   do

@@ -1,7 +1,10 @@
 module LTG where
 
+import Control.Monad
 import qualified Data.IntMap as IM
+import Data.IntMap ((!))
 import qualified Data.Map as Map
+import System.IO
 
 -- ---------------------------------------------------------------------------
 
@@ -92,13 +95,52 @@ initialPlayerState =
   , IM.fromList [(i, 10000) | i <- [0..255]]
   )
 
+showPlayerState :: PlayerState -> String
+showPlayerState = show . g
+  where
+    g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
+                    , f ! i /= PAp I [] || v ! i /= 10000]
+
 type GameState = (PlayerState, PlayerState)
 
 initialState :: GameState
 initialState = (initialPlayerState, initialPlayerState)
+
+printState :: GameState -> IO ()
+printState = hPrintState stdout
+
+hPrintState :: Handle -> GameState -> IO ()
+hPrintState h (p1,p2) = do
+  hPutStrLn h $ showPlayerState p1
+  hPutStrLn h $ showPlayerState p2
 
 -- ---------------------------------------------------------------------------
 
 data LR = L | R deriving (Ord, Eq, Show, Enum, Bounded)
 type Action = (LR, Card, SlotNum)
 
+readAction :: IO Action
+readAction = do
+  lr <- getLine
+  case lr of
+    "1" -> do
+      card <- liftM cardOfName getLine
+      slot <- readLn
+      return (L, card, slot)
+    "2" -> do
+      slot <- readLn
+      card <- liftM cardOfName getLine
+      return (R, card, slot)
+
+writeAction :: Action -> IO ()
+writeAction (lr,card,slot) = do
+  case lr of
+    L -> do
+      putStrLn "1"
+      putStrLn (cardName card)
+      print slot
+    R -> do
+      putStrLn "2"
+      print slot
+      putStrLn (cardName card)
+  hFlush stdout
