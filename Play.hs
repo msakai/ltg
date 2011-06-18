@@ -6,7 +6,9 @@ import qualified Data.IntMap as IM
 import Data.IntMap ((!))
 import System.Environment (getArgs)
 import System.IO
+
 import LTG
+import Eval
 
 {-
 Player is a (infinite state) Mealy Machine
