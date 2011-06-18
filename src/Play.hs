@@ -22,19 +22,19 @@ act isPlayer0 action = do
   put s'
   case err of
     Nothing -> return ()
-    Just err -> lift $ putStrLn err
+    Just err -> lift $ hPutStrLn stderr err
 
 zom :: Bool -> StateT GameState IO ()
 zom isPlayer0 = do
   s <- get
   let s2 = if isPlayer0 then fst s else snd s
   when (-1 `elem` IM.elems (snd s2)) $ do
-    lift $ putStrLn "Zombie running ..."
+    lift $ hPutStrLn stderr "Zombie running ..."
     s <- get
     let (msgs, s') = runZombies isPlayer0 s
     put s'
-    lift $ mapM_ putStrLn msgs
-    lift $ printState s'
+    lift $ mapM_ (hPutStrLn stderr) msgs
+    lift $ hPrintState stderr s'
 
 play :: Player -> Player -> StateT GameState IO ()
 play = go True
