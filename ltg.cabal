@@ -10,9 +10,8 @@ Build-Type:     Simple
 -- homepage:       
 Stability:      alpha
 -- package-url:    
-synopsis:       ICFP Programming Contest's Program
+Synopsis:       ICFP Programming Contest's Program
 Description:
-HS-Source-Dirs: src
 
 Tested-with: GHC == 7.0.3
 
@@ -21,14 +20,16 @@ Tested-with: GHC == 7.0.3
 --  Exposed-Modules:  
 
 Executable run
-  build-depends:   base, containers, mtl
-  Main-is:         run.hs
+  HS-Source-Dirs: src
+  Build-Depends:   base, containers, mtl
+  Main-Is:         run.hs
 
 Executable TitForTat
-  build-depends:   base, containers, mtl
+  HS-Source-Dirs: src
+  Build-Depends:   base, containers, mtl
   Main-is:         TitForTat.hs
 
 Source-repository this
   type:           darcs
-  location:       icfp11@www.sampou.org:ltg/
+  Location:       icfp11@www.sampou.org:ltg/
   -- location:       http://icfp11@www.sampou.org:ltg/ ?
