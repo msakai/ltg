@@ -2,6 +2,9 @@ module Lib where
 
 import LTG
 import SlotName
+import Control.Monad.Writer
+import Control.Monad.State
+import qualified Data.IntSet as IS
 
 copy,copy' :: SlotNum -> SlotNum -> [Action]
 copy  from to = makeNum  from to ++ [(L, Get, to)]
@@ -163,3 +166,50 @@ initY' sn = initL' _res ++ setFun _res ++ [(L,S,_fun)] -- s[_fun] = SL
 overloadY' sn = overloading sn $ initY' sn
 initY = initY' _Y
 overloadY = overloading _Y $ initY
+
+-- ---------------------------------------------------------------------------
+
+makeValue :: Value -> SlotNum -> [Action]
+makeValue m s = execM (makeValue' m s) (IS.fromList [0,1])
+{-
+とりあえず、0,1以外は好き勝手破壊して良いことに
+他に保護したい場所は [0,1] のところを書き換えれば良い
+-}
+
+type M = StateT IS.IntSet (Writer [Action])
+
+allocSlot :: M SlotNum
+allocSlot = do
+  s <- get
+  case filter (\i -> i `IS.notMember` s) [0..255] of
+    [] -> error "no free slot"
+    i:_ -> do
+      put (IS.insert i s)
+      return i      
+
+freeSlot :: SlotNum -> M ()
+freeSlot i = modify (IS.delete i)
+
+execM :: M a -> IS.IntSet -> [Action]
+execM m s = execWriter $ runStateT m s
+
+makeValue' :: Value -> SlotNum -> M ()
+makeValue' (IntVal n) dst   = tell $ makeNum' n dst
+makeValue' (PAp c args) dst = f c (reverse args) dst
+  where
+    f :: Card -> [Value] -> SlotNum -> M ()
+    f c [] dst = tell [(L,Put,dst), (R,c,dst)]
+    f c (x:xs) dst = do
+      tmp1 <- allocSlot
+      tmp2 <- allocSlot
+      f c xs tmp1
+      makeValue' x tmp2
+      tell $ copy' tmp1 1
+      freeSlot tmp1
+      tell $ copy' tmp2 0
+      freeSlot tmp2
+      tell $ apply' dst
+      tell $ doApply dst
+      return ()
+
+-- ---------------------------------------------------------------------------
