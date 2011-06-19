@@ -2,8 +2,8 @@ module Eval
   ( Eval
   , runEval
   , apply
-  , doAction
-  , runZombies
+  , simulateAction
+  , simulateZombies
   ) where
 
 import Control.Monad
@@ -208,8 +208,8 @@ checkAlive i = do
 引数で現在がisPlayer0によって先手番かどうかを判定。
 -}
 
-doAction :: Bool -> Action -> GameState -> (Maybe String, GameState)
-doAction isPlayer0 (lr,c,i) s = flip runState s $ do
+simulateAction :: Bool -> Action -> GameState -> (Maybe String, GameState)
+simulateAction isPlayer0 (lr,c,i) s = flip runState s $ do
   unless isPlayer0 swapPlayer
   (f,_) <- gets fst
   ret <- runEval False $ do
@@ -228,8 +228,8 @@ doAction isPlayer0 (lr,c,i) s = flip runState s $ do
   unless isPlayer0 swapPlayer
   return err
 
-runZombies :: Bool -> GameState -> ([String], GameState)
-runZombies isPlayer0 s = flip runState s $ do
+simulateZombies :: Bool -> GameState -> ([String], GameState)
+simulateZombies isPlayer0 s = flip runState s $ do
   unless isPlayer0 swapPlayer
   xs <- liftM concat $ forM [0..255] $ \i -> do
     (f,v) <- gets fst

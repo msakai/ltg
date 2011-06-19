@@ -19,7 +19,7 @@ import Player
 act :: Bool -> Action -> StateT GameState IO ()
 act isPlayer0 action = do
   s <- get
-  let (err, s') = doAction isPlayer0 action s
+  let (err, s') = simulateAction isPlayer0 action s
   put s'
   case err of
     Nothing -> return ()
@@ -31,7 +31,7 @@ zom isPlayer0 = do
   let s2 = if isPlayer0 then fst s else snd s
   when (-1 `elem` IM.elems (snd s2)) $ do
     lift $ hPutStrLn stderr "Zombie running ..."
-    let (msgs, s') = runZombies isPlayer0 s
+    let (msgs, s') = simulateZombies isPlayer0 s
     put s'
     lift $ mapM_ (hPutStrLn stderr) msgs
     lift $ hPrintState stderr s'
