@@ -43,7 +43,7 @@ data Card
   | Copy
   | Revive
   | Zombie
-  deriving (Eq, Ord, Enum,Show,Read)
+  deriving (Eq, Ord, Enum, Bounded, Show, Read)
 
 arity :: Card -> Int
 arity I = 1
