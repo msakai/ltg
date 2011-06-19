@@ -39,7 +39,7 @@ tryToMakeN n p0 =
           Left action -> Left action
           Right j -> Left (L, Succ, j)
       else
-        case findValue (PAp I []) p0 of
+        case findValue vI p0 of
           Just idSlot -> Left (R, Zero, idSlot)
           Nothing -> Left (L, Put, 0)
 

@@ -84,6 +84,23 @@ cardOfName = (m Map.!)
   where
     m = Map.fromList [(cardName card, card) | card <-[I .. Zombie]]
 
+vI, vZero, vSucc, vDbl, vGet, vPut, vS, vK, vInc, vDec, vAttack, vHelp, vCopy, vRevive, vZombie :: Value
+vI      = PAp I      []
+vZero   = IntVal 0
+vSucc   = PAp Succ   []
+vDbl    = PAp Dbl    []
+vGet    = PAp Get    []
+vPut    = PAp Put    []
+vS      = PAp S      []
+vK      = PAp K      []
+vInc    = PAp Inc    []
+vDec    = PAp Dec    []
+vAttack = PAp Attack []
+vHelp   = PAp Help   []
+vCopy   = PAp Copy   []
+vRevive = PAp Revive []
+vZombie = PAp Zombie []
+
 -- ---------------------------------------------------------------------------
 
 -- (field, vitality)
@@ -91,7 +108,7 @@ type PlayerState = (IM.IntMap Value, IM.IntMap Int)
 
 initialPlayerState :: PlayerState
 initialPlayerState =
-  ( IM.fromList [(i, PAp I []) | i <- [0..255]]
+  ( IM.fromList [(i, vI) | i <- [0..255]]
   , IM.fromList [(i, 10000) | i <- [0..255]]
   )
 
@@ -99,7 +116,7 @@ showPlayerState :: PlayerState -> String
 showPlayerState = show . g
   where
     g (f,v) = [slot | i <- [0..255], let slot = (i, (v ! i, f ! i))
-                    , f ! i /= PAp I [] || v ! i /= 10000]
+                    , f ! i /= vI || v ! i /= 10000]
 
 type GameState = (PlayerState, PlayerState)
 

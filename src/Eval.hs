@@ -92,7 +92,7 @@ applyCard Get [i] = do
   checkValidSlotNum i
   (f,v) <- getPlayer0
   return $ f ! i
-applyCard Put [x] = return (PAp I [])
+applyCard Put [x] = return vI
 applyCard S [f,g,x] = do
   h <- apply f x
   y <- apply g x
@@ -112,7 +112,7 @@ applyCard Inc [i] = do
     else
       when (0 < val) $
         putPlayer0 (f, IM.insert i (val-1) v)
-  return $ PAp I []
+  return vI
 applyCard Dec [i] = do
   i <- asInt i
   checkValidSlotNum i
@@ -127,7 +127,7 @@ applyCard Dec [i] = do
     else
       when (0 < val && val < 0xFFFF) $
         putPlayer1 (f', IM.insert idx (val+1) v')
-  return $ PAp I []
+  return $ vI
 applyCard Attack [i,j,n] = do
   i <- asInt i
   j <- asInt j
@@ -152,7 +152,7 @@ applyCard Attack [i,j,n] = do
     else do
       let val2' = min 0xFF (val2 + ((n*9) `div` 10))
       putPlayer1 (f', IM.insert idx2 val2' v')
-  return $ PAp I []
+  return vI
 applyCard Help [i,j,n] = do
   i <- asInt i
   j <- asInt j
@@ -171,7 +171,7 @@ applyCard Help [i,j,n] = do
     else do
       let v2 = IM.insert j (max 0 (((v ! j) - ((n*11) `div` 10)))) v
       putPlayer0 (f,v2)
-  return $ PAp I []
+  return vI
 applyCard Copy [i] = do
   i <- asInt i
   checkValidSlotNum i
@@ -184,7 +184,7 @@ applyCard Revive [i] = do
   let val = v ! i
   when (val <= 0) $
     putPlayer0 (f, IM.insert i 1 v)
-  return $ PAp I []
+  return vI
 applyCard Zombie [i,x] = do
   i <- asInt i
   (f',v') <- getPlayer1
@@ -192,7 +192,7 @@ applyCard Zombie [i,x] = do
       val = v' ! idx
   unless (dead val) $ throwError "not dead"
   putPlayer1 (IM.insert idx x f', IM.insert idx (-1) v')
-  return $ PAp I []
+  return vI
 applyCard c args = throwError $ "cannot handle " ++ show (PAp c args)
 
 checkValidSlotNum :: SlotNum -> Eval ()
@@ -227,7 +227,7 @@ doAction isPlayer0 (lr,c,i) s = flip runState s $ do
       R -> apply s c
   let (val,err) =
         case ret of
-          Left err -> (PAp I [], Just err)
+          Left err -> (vI, Just err)
           Right val -> (val, Nothing)
   ((f,v),(f',v')) <- get
   put ((IM.insert i val f, v), (f',v'))
@@ -241,9 +241,9 @@ runZombies isPlayer0 s = flip runState s $ do
     (f,v) <- gets fst
     if (v ! i == -1)
       then do
-        ret <- runEval True $ apply (f ! i) (PAp I [])
+        ret <- runEval True $ apply (f ! i) vI
         ((f,v),(f',v')) <- get
-        put ((IM.insert i (PAp I []) f, IM.insert i 0 v), (f',v'))
+        put ((IM.insert i vI f, IM.insert i 0 v), (f',v'))
         case ret of
           Left err -> return [printf "zombie(%d): %s" i err]
           Right _  -> return [printf "zombie(%d)" i]
