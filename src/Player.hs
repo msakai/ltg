@@ -24,6 +24,7 @@ newtype Player = Player{ trans :: GameState -> (Action, Player) }
 
 replay :: [Action] -> Player
 replay (x:xs) = Player (\_ -> (x, replay xs))
+replay [] = error "replay on empty list"
 -- replay xs = runTask' (mapM_ execAction xs)
 
 -- ---------------------------------------------------------------------------
@@ -42,6 +43,6 @@ getState :: Task GameState
 getState = Task $ \k -> Player $ \s -> trans (k s) s
 
 execAction :: Action -> Task ()
-execAction a = Task $ \k -> Player $ \s -> (a, k ())
+execAction a = Task $ \k -> Player $ \_ -> (a, k ())
 
 -- ---------------------------------------------------------------------------

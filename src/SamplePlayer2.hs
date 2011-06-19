@@ -6,7 +6,6 @@ module SamplePlayer2 (samplePlayer2) where
 
 import Control.Monad.State
 import qualified Data.IntMap as IM
-import Data.Maybe
 import LTG
 import Player
 import Play
@@ -45,7 +44,7 @@ loop' :: GameState -> (Action, Player)
 loop' (p0,p1) =
   case tryToMakeN (255 - target) p0 of
     Left action -> ( action, loop )
-    Right i ->
+    Right _ ->
       if fst p0 IM.! callLoc == fst p0 IM.! weaponLoc
       then ( (R, Zero, callLoc), loop )
       else
@@ -59,10 +58,7 @@ loop' (p0,p1) =
     target = findAliveTarget p1
 
 findAliveTarget :: PlayerState -> Int
-findAliveTarget (f,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
-
-findValue :: Value -> PlayerState -> Maybe Int
-findValue val (f,v) = listToMaybe [i | (i, val') <- IM.toList f, val==val', alive (v IM.! i)]
+findAliveTarget (_,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
 
 tryToMakeN :: Int -> PlayerState -> Either Action SlotNum
 tryToMakeN n p0 =
@@ -70,10 +66,10 @@ tryToMakeN n p0 =
     IntVal m
       | m == n -> Right 0
       | m < n  -> Left (L, Succ, 0)
-      | otherwise -> Left (L, Put, 0)
     PAp I [] -> Left (R, Zero, 0)
+    _ -> Left (L, Put, 0)
 
 testSession :: IO ()
 testSession = do
-  runStateT (play samplePlayer2 samplePlayer1) initialState
+  _ <- runStateT (play samplePlayer2 samplePlayer1) initialState
   return ()

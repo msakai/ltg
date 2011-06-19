@@ -142,13 +142,13 @@ type Action = (LR, Card, SlotNum)
 
 readAction :: IO Action
 readAction = do
-  lr <- getLine
-  case lr of
-    "1" -> do
+  lr <- readLn
+  case (lr::Int) of
+    1 -> do
       card <- liftM cardOfName getLine
       slot <- readLn
       return (L, card, slot)
-    "2" -> do
+    2 -> do
       slot <- readLn
       card <- liftM cardOfName getLine
       return (R, card, slot)

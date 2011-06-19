@@ -15,7 +15,7 @@ import Player
 -- 他のスロットの値を参照したり壊したりしない
 setI :: SlotNum -> Task ()
 setI loc = do
-  ((f,v),_) <- getState  
+  ((f,_),_) <- getState  
   unless ((f IM.! loc) == vI) $ execAction (L, Put, loc)
 
 -- スロットlocにカードcをセットする
@@ -23,7 +23,7 @@ setI loc = do
 setCard :: Card -> SlotNum -> Task ()
 setCard I loc = setI loc
 setCard c loc = do
-  ((f,v),_) <- getState  
+  ((f,_),_) <- getState  
   unless ((f IM.! loc) == cardValue c) $ do
     setI loc
     execAction (R, c, loc)
@@ -38,9 +38,8 @@ makeNum :: Int -> SlotNum -> Task ()
 makeNum i loc = loop
   where
     loop = do
-      ((f,v),_) <- getState
-      let val = f IM.! loc
-      case val of
+      ((f,_),_) <- getState
+      case f IM.! loc of
         IntVal val
           | val == i ->
               return ()
@@ -50,7 +49,7 @@ makeNum i loc = loop
           | val < i -> do
               execAction (L, Succ, loc)
               loop
-        _ ->
+        val ->
           if val == vI
           then do
             execAction (R, Zero, loc)
@@ -74,7 +73,7 @@ apply1To0 res = applyNTo0 1 res
 applyNTo0 :: SlotNum -> SlotNum -> Task ()
 applyNTo0 fun res = do
   setCard Get res
-  replicateM fun $ mapM_ execAction $ 
+  replicateM_ fun $ mapM_ execAction $ 
     [(L,K,res), (L,S,res), (R,Succ,res)]
   mapM_ execAction $
     [(L,S,res), (R,Get,res)]

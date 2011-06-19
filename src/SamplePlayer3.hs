@@ -6,7 +6,6 @@ module SamplePlayer3 (samplePlayer3) where
 
 import Control.Monad.State
 import qualified Data.IntMap as IM
-import Data.Maybe
 import LTG
 import Player
 import Play
@@ -67,7 +66,7 @@ persist mkMain0 loc = do
 mkWeapon0 :: Task ()
 mkWeapon0 = do
   setCard Dec 0
-  replicateM strength $ do
+  replicateM_ strength $ do
     execAction (L, S, 0)
     execAction (R, Dec, 0)
   execAction (L, K, 0)
@@ -76,15 +75,15 @@ mkWeapon0 = do
 
 loop :: Task ()
 loop = do
-  (p0,p1) <- getState
+  (_,p1) <- getState
   let target = findAliveTarget p1  
   makeNum (255 - target) 0
   execAction (R, Zero, weaponLoc)
 
 findAliveTarget :: PlayerState -> Int
-findAliveTarget (f,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
+findAliveTarget (_,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
 
 testSession :: IO ()
 testSession = do
-  runStateT (only samplePlayer3) initialState
+  _ <- runStateT (only samplePlayer3) initialState
   return ()
