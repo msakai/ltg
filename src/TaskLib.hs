@@ -12,17 +12,19 @@ import qualified Data.IntMap as IM
 import Player
 
 -- スロットlocにIをセットする
+-- 他のスロットの値を参照したり壊したりしない
 setI :: SlotNum -> Task ()
 setI loc = do
   ((f,v),_) <- getState  
-  when ((f IM.! loc) /= vI) $ execAction (L, Put, loc)
+  unless ((f IM.! loc) == vI) $ execAction (L, Put, loc)
 
 -- スロットlocにカードcをセットする
-setCard :: SlotNum -> Card -> Task ()
-setCard loc I = setI loc
-setCard loc c = do
+-- 他のスロットの値を参照したり壊したりしない
+setCard :: Card -> SlotNum -> Task ()
+setCard I loc = setI loc
+setCard c loc = do
   ((f,v),_) <- getState  
-  unless ((f IM.! loc) == PAp c []) $ do
+  unless ((f IM.! loc) == cardValue c) $ do
     setI loc
     execAction (R, c, loc)
 
@@ -30,8 +32,7 @@ setCard loc c = do
 スロットlocに値iを作成
 他のスロットの値を参照したり壊したりしない
 
-TODO:
-* ターン数の最適化
+TODO: ターン数の最適化
 -}
 makeNum :: Int -> SlotNum -> Task ()
 makeNum i loc = loop
@@ -59,6 +60,7 @@ makeNum i loc = loop
             loop
 
 -- fromからtoにスロットの値をコピー
+-- 他のスロットの値を参照したり壊したりしない
 copySlot :: SlotNum -> SlotNum -> Task ()
 copySlot from to = do
   makeNum from to
@@ -66,15 +68,14 @@ copySlot from to = do
 
 -- スロット1の関数をスロット0の値に適用し、結果をresに格納する
 apply1To0 :: SlotNum -> Task ()
-apply1To0 res = do
-  setI res
+apply1To0 res = applyNTo0 1 res
+
+-- スロットfunの関数をスロット0の値に適用し、結果をresに格納する
+applyNTo0 :: SlotNum -> SlotNum -> Task ()
+applyNTo0 fun res = do
+  setCard Get res
+  replicateM fun $ mapM_ execAction $ 
+    [(L,K,res), (L,S,res), (R,Succ,res)]
   mapM_ execAction $
-    [ (R,Get,res)
-    , (L,K,res)
-    , (L,S,res)
-    , (R,Succ,res)
-    , (L,S,res)
-    , (R,Get,res)
-    , (R,Zero,res)
-    ]
-  
+    [(L,S,res), (R,Get,res)]
+  execAction (R,Zero,res)
