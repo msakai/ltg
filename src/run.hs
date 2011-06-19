@@ -1,7 +1,7 @@
 module Main where
 
 import Play
-import SamplePlayer1
+import SamplePlayer3
 
 main :: IO ()
-main = runPlayer samplePlayer1
+main = runPlayer samplePlayer3
