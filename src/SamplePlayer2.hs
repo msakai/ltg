@@ -70,6 +70,5 @@ tryToMakeN n p0 =
     _ -> Left (L, Put, 0)
 
 testSession :: IO ()
-testSession = do
-  _ <- runStateT (play samplePlayer2 samplePlayer1) initialState
-  return ()
+testSession = match samplePlayer2 samplePlayer1
+

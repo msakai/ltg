@@ -5,7 +5,7 @@ import qualified Data.IntMap as IM
 import Data.Maybe
 import LTG
 import Player
-import Play (play)
+import Play (match)
 
 {-
 相手の生きているスロットに対してひたすら dec するだけのプレイヤー
@@ -44,7 +44,6 @@ tryToMakeN n p0 =
           Nothing -> Left (L, Put, 0)
 
 testSession :: IO ()
-testSession = do
-  runStateT (play samplePlayer1 samplePlayer1) initialState
-  return ()
+testSession = match samplePlayer1 samplePlayer1
+
 

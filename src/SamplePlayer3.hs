@@ -84,6 +84,5 @@ findAliveTarget :: PlayerState -> Int
 findAliveTarget (_,v) = head [i | i <- [255,254..0], alive (v IM.! i)]
 
 testSession :: IO ()
-testSession = do
-  _ <- runStateT (only samplePlayer3) initialState
-  return ()
+testSession = only samplePlayer3
+

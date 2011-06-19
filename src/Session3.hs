@@ -13,4 +13,4 @@ player3 = replay
   , (R, Zero, 0)
   ]
 
-session3 = runStateT (only player3) initialState
+session3 = only player3

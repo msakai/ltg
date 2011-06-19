@@ -1,6 +1,8 @@
 module Play
-  ( play
+  ( match
+  , match'
   , only
+  , only'
   , runPlayer
   ) where
 
@@ -38,8 +40,11 @@ zom isPlayer0 = do
 
 -- ---------------------------------------------------------------------------
 
-play :: Player -> Player -> StateT GameState IO ()
-play = go True
+match :: Player -> Player -> IO ()
+match p0 p1 = match' p0 p1 initialState
+
+match' :: Player -> Player -> GameState -> IO ()
+match' p0 p1 = evalStateT $ go True p0 p1
   where
     go :: Bool -> Player -> Player -> StateT GameState IO ()
     go isPlayer0 p0 p1 = do
@@ -60,15 +65,20 @@ play = go True
           act isPlayer0 action
           go True p0 p1'
 
-only :: Player -> StateT GameState IO ()
-only p = do
-  lift $ putStrLn "========= player 0"
-  s <- get
-  lift $ printState s
-  let (action,p') = trans p s
-  lift $ print action
-  act True action
-  only p'
+only :: Player -> IO ()
+only p = only' p initialState
+
+only' :: Player -> GameState -> IO ()
+only' p = evalStateT $ go p
+  where 
+    go p = do
+      lift $ putStrLn "========= player 0"
+      s <- get
+      lift $ printState s
+      let (action,p') = trans p s
+      lift $ print action
+      act True action
+      go p'
 
 -- ---------------------------------------------------------------------------
 

@@ -3,7 +3,7 @@ module Session1 where
 import Control.Monad.State
 import LTG
 import Player
-import Play (play)
+import Play (match)
 
 player0 = replay
   [ (R,Zero,0)
@@ -21,4 +21,4 @@ player1 = replay
   , (L, Succ, 0)
   ]
 
-session1 = runStateT (play player0 player1) initialState
+session1 = match player0 player1
