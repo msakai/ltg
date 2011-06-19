@@ -84,22 +84,26 @@ cardOfName = (m Map.!)
   where
     m = Map.fromList [(cardName card, card) | card <-[I .. Zombie]]
 
+cardValue :: Card -> Value
+cardValue Zero = IntVal 0
+cardValue c = PAp c []
+
 vI, vZero, vSucc, vDbl, vGet, vPut, vS, vK, vInc, vDec, vAttack, vHelp, vCopy, vRevive, vZombie :: Value
-vI      = PAp I      []
-vZero   = IntVal 0
-vSucc   = PAp Succ   []
-vDbl    = PAp Dbl    []
-vGet    = PAp Get    []
-vPut    = PAp Put    []
-vS      = PAp S      []
-vK      = PAp K      []
-vInc    = PAp Inc    []
-vDec    = PAp Dec    []
-vAttack = PAp Attack []
-vHelp   = PAp Help   []
-vCopy   = PAp Copy   []
-vRevive = PAp Revive []
-vZombie = PAp Zombie []
+vI      = cardValue I
+vZero   = cardValue Zero
+vSucc   = cardValue Succ
+vDbl    = cardValue Dbl
+vGet    = cardValue Get
+vPut    = cardValue Put
+vS      = cardValue S
+vK      = cardValue K
+vInc    = cardValue Inc
+vDec    = cardValue Dec
+vAttack = cardValue Attack
+vHelp   = cardValue Help
+vCopy   = cardValue Copy
+vRevive = cardValue Revive
+vZombie = cardValue Zombie
 
 -- ---------------------------------------------------------------------------
 

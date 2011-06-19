@@ -1,7 +1,6 @@
 module Eval
   ( Eval
   , runEval
-  , evalCard
   , apply
   , doAction
   , runZombies
@@ -64,11 +63,6 @@ asInt :: Value -> Eval Int
 asInt (IntVal n)  = return n
 asInt (PAp Zero []) = return 0
 asInt x = throwError $ show x ++ " is not an integer."
-
-evalCard :: Card -> Eval Value
-evalCard c
-  | arity c == 0 = applyCard c []
-  | otherwise    = return $ PAp c []
 
 apply :: Value -> Value -> Eval Value
 apply (IntVal n) _ = throwError $ "cannot apply integer " ++ show n
@@ -220,11 +214,11 @@ doAction isPlayer0 (lr,c,i) s = flip runState s $ do
   (f,_) <- gets fst
   ret <- runEval False $ do
     checkAlive i
-    c <- evalCard c
+    let c' = cardValue c
     let s = f ! i
     case lr of
-      L -> apply c s
-      R -> apply s c
+      L -> apply c' s
+      R -> apply s c'
   let (val,err) =
         case ret of
           Left err -> (vI, Just err)
