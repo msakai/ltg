@@ -6,6 +6,8 @@ module Lambda
 
 import LTG
 
+import qualified Data.Set as Set
+
 type Var = String
 
 data Term
@@ -34,18 +36,26 @@ toValue (Var v)      = error "should not happen"
 toValue (Lambda v a) = error "should not happen"
 
 compile' :: Term -> Term
-compile' (Int i)      = Int i
-compile' (Card c)     = Card c
 compile' (App a b)    = app (compile' a) (compile' b)
-compile' (Lambda v a) = removeVar v a
+compile' (Lambda v a) = removeVar v (compile' a)
+compile' x            = x
 
 removeVar :: Var -> Term -> Term
 removeVar x (Var y) | x==y = Card I
-removeVar x (Int i) = Int i
+removeVar x tm | x `Set.notMember` fvs tm = app (Card K) tm
 removeVar x (App f y) = app (app (Card S) (removeVar x f)) (removeVar x y)
-removeVar x (Lambda y z) = removeVar x (removeVar y z)
-removeVar x y = app (Card K) y
+removeVar x tm = app (Card K) tm
 
 app :: Term -> Term -> Term
+app (Card I) tm = tm
+app (Card Put) tm = Card I
 app (Card K) (Card I) = Card Put
+app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3)
 app x y = App x y
+
+-- free variables
+fvs :: Term -> Set.Set Var
+fvs (Var v) = Set.singleton v
+fvs (App a b) = fvs a `Set.union` fvs b
+fvs (Lambda v a) = Set.delete v (fvs a)
+fvs _ = Set.empty
