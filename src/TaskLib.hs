@@ -44,7 +44,7 @@ makeNum i loc = loop
         IntVal val
           | val == i ->
               return ()
-          | val*2 <= i -> do
+          | val /= 0 && val*2 <= i -> do
               execAction (L, Dbl, loc)
               loop
           | val < i -> do
