@@ -1,6 +1,7 @@
 module Lambda
   ( Var
   , Term (..)
+  , (<@>)
   , compile
   ) where
 
@@ -17,6 +18,11 @@ data Term
     | App Term Term
     | Lambda Var Term
     deriving Show
+
+infixl 1 <@>
+
+(<@>) :: Term -> Term -> Term
+(<@>) = App
 
 compile :: Term -> Value
 compile = toValue . compile'
