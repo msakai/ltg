@@ -56,7 +56,7 @@ app :: Term -> Term -> Term
 app (Card I) tm = tm
 -- app (Card Put) tm = Card I -- tmの副作用が失われるのでダメ
 app (Card K) (Card I) = Card Put
-app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3)
+-- app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3) -- tm3の副作用が複製されるのでダメ
 app x y = App x y
 
 -- free variables
