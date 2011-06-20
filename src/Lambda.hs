@@ -3,6 +3,8 @@ module Lambda
   , Term (..)
   , (<@>)
   , compile
+  , begin
+  , beginN
   ) where
 
 import LTG
@@ -70,3 +72,21 @@ fvs (Var v) = Set.singleton v
 fvs (App a b) = fvs a `Set.union` fvs b
 fvs (Lambda v a) = Set.delete v (fvs a)
 fvs _ = Set.empty
+
+beginFst :: Term -> Term -> Term
+beginFst tm1 tm2 = Card K <@> tm1 <@> tm2
+
+beginSnd :: Term -> Term -> Term
+beginSnd tm1 tm2 = Card Put <@> tm1 <@> tm2
+
+begin :: [Term] -> Term
+begin []  = Card I -- XXX
+begin [x] = x
+begin [x,y] = beginSnd x y
+begin (x:xs) = beginSnd x (begin xs)
+
+beginN :: Int -> [Term] -> Term
+beginN _ [] = Card I -- XXX
+beginN 0 [x] = x
+beginN 0 (x:xs) = beginFst x (begin xs)
+beginN n (x:xs) = beginSnd x (beginN (n-1) xs)
