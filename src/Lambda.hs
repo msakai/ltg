@@ -48,7 +48,7 @@ removeVar x tm = app (Card K) tm
 
 app :: Term -> Term -> Term
 app (Card I) tm = tm
-app (Card Put) tm = Card I
+-- app (Card Put) tm = Card I -- tm‚Ì•›ì—p‚ª¸‚í‚ê‚é‚Ì‚Åƒ_ƒ
 app (Card K) (Card I) = Card Put
 app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3)
 app x y = App x y
