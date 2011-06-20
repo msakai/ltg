@@ -14,7 +14,7 @@ type Var = String
 data Term
     = Var String
     | Int !Int
-    | Card Card
+    | Card !Card
     | App Term Term
     | Lambda Var Term
     deriving Show
@@ -47,9 +47,14 @@ compile' (Lambda v a) = removeVar v (compile' a)
 compile' x            = x
 
 removeVar :: Var -> Term -> Term
+
+-- optimization for special cases
+-- removeVar x tm | x `Set.notMember` fvs tm = app (Card K) tm
+-- removeVar x (App tm1 (Var y)) | x==y && x `Set.notMember` fvs tm1 = tm1
+
+-- general cases
 removeVar x (Var y) | x==y = Card I
-removeVar x tm | x `Set.notMember` fvs tm = app (Card K) tm
-removeVar x (App f y) = app (app (Card S) (removeVar x f)) (removeVar x y)
+removeVar x (App tm1 tm2) = app (app (Card S) (removeVar x tm1)) (removeVar x tm2)
 removeVar x tm = app (Card K) tm
 
 app :: Term -> Term -> Term
