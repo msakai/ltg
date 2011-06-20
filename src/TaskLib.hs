@@ -78,3 +78,27 @@ applyNTo0 fun res = do
   mapM_ execAction $
     [(L,S,res), (R,Get,res)]
   execAction (R,Zero,res)
+
+{-
+任意の値をスロット上に構築
+tmpsは一時領域として使っても良い領域のリスト
+-}
+makeValue :: Value -> SlotNum -> [SlotNum] -> Task ()
+makeValue (IntVal n) dst _ = makeNum n dst
+makeValue (PAp c args) dst tmps = f c (reverse args) dst tmps
+  where
+    f c [] dst _ = setCard c dst
+    f c [x] dst tmps = do
+      makeValue x dst tmps
+      execAction (L, c, dst)
+    f c (PAp c2 [] : xs) dst tmps = do
+      f c xs dst tmps 
+      execAction (R, c2, dst)
+    f c (IntVal 0 : xs) dst tmps = do
+      f c xs dst tmps
+      execAction (R, Zero, dst)
+    f c (x:xs) dst (tmp:tmps) = do
+      f c xs tmp tmps
+      makeValue x 0 tmps
+      applyNTo0 tmp dst
+    f c (x:xs) dst [] = error "no more temporary slot"
