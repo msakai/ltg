@@ -105,6 +105,19 @@ vCopy   = cardValue Copy
 vRevive = cardValue Revive
 vZombie = cardValue Zombie
 
+-- 状態に依存しない純粋関数的なカード
+pureCards :: [Card]
+pureCards =
+  [I, Zero, Succ, Dbl, Put, S, K]
+
+-- 状態に依存するが状態を変更しないカード
+rdCards :: [Card]
+rdCards = [Get, Copy]
+
+-- 状態に依存し、状態を変更するカード
+wrCards :: [Card]
+wrCards = [Inc, Dec, Attack, Help, Revive, Zombie]
+
 -- ---------------------------------------------------------------------------
 
 -- (field, vitality)
