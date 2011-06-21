@@ -82,6 +82,7 @@ applyNTo0 fun res = do
 {-
 任意の値をスロット上に構築
 tmpsは一時領域として使っても良い領域のリスト
+tmpsおよび0は破壊される
 -}
 makeValue :: Value -> SlotNum -> [SlotNum] -> Task ()
 makeValue (IntVal n) dst _ = makeNum n dst
@@ -97,8 +98,9 @@ makeValue (PAp c args) dst tmps = f c (reverse args) dst tmps
     f c (IntVal 0 : xs) dst tmps = do
       f c xs dst tmps
       execAction (R, Zero, dst)
-    f c (x:xs) dst (tmp:tmps) = do
+    f c (x:xs) dst (tmp:tmp2:tmps) = do
       f c xs tmp tmps
-      makeValue x 0 tmps
+      makeValue x tmp2 tmps
+      copySlot tmp2 0
       applyNTo0 tmp dst
     f c (x:xs) dst [] = error "no more temporary slot"
