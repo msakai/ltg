@@ -5,6 +5,8 @@ module Lambda
   , compile
   , begin
   , beginN
+  , let'
+  , let_
   ) where
 
 import LTG
@@ -90,3 +92,11 @@ beginN _ [] = Card I -- XXX
 beginN 0 [x] = x
 beginN 0 (x:xs) = beginFst x (begin xs)
 beginN n (x:xs) = beginSnd x (beginN (n-1) xs)
+
+-- "let v = tm1 in tm2"
+let' :: Var -> Term -> Term -> Term
+let' v tm1 tm2 = Lambda v tm2 <@> tm1
+
+-- "let _ = tm1 in tm2"
+let_ :: Term -> Term -> Term
+let_ tm1 tm2 = beginSnd tm1 tm2
