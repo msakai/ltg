@@ -11,7 +11,12 @@ import Debug.Trace
 
 samplePlayer4 :: Player
 samplePlayer4 = runTask' $ do
-  -- 無限ループでスロット0のvitalityを0xffffまで増やす
+  {-
+    無限ループでスロット0のvitalityを0xffffまで増やす
+    λx → do
+      help(0, 0, 8192)
+      get(1)(x)
+  -}
   let foo = comp1 (PAp S [PAp K [PAp Help [IntVal 0, IntVal 0]], PAp K [IntVal 8192]])
                   (PAp S [PAp S [PAp K [PAp Get []], PAp Succ []], PAp I []])
   makeValue foo 1 [2..]
