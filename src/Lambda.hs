@@ -39,7 +39,7 @@ toValue (App x y) =
     IntVal _ -> error "cannot apply integer value"
     PAp c args
       | length args + 1 >= arity c ->
-          error "arity exceeded" -- FIXME: arity�ȏ�ɂȂ�Ƃ��ɂǂ�����?
+          error "arity exceeded"
       | otherwise ->
           PAp c (args ++ [toValue y])
 toValue (Var v)      = error "should not happen"
@@ -54,6 +54,7 @@ removeVar :: Var -> Term -> Term
 
 -- optimization for special cases
 -- removeVar x tm | x `Set.notMember` fvs tm = app (Card K) tm
+-- η変換になるから、やっちゃダメ
 -- removeVar x (App tm1 (Var y)) | x==y && x `Set.notMember` fvs tm1 = tm1
 
 -- general cases
@@ -63,9 +64,11 @@ removeVar x tm = app (Card K) tm
 
 app :: Term -> Term -> Term
 app (Card I) tm = tm
--- app (Card Put) tm = Card I -- tm�̕���p��������̂Ń_��
+-- tmの副作用が失われるのでダメ
+-- app (Card Put) tm = Card I
 app (Card K) (Card I) = Card Put
--- app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3) -- tm3�̕���p�����������̂Ń_��
+-- tm3の副作用が複製されるし、副作用の順番が変わるのでダメ
+-- app (App (App (Card S) tm1) tm2) tm3 = app (app tm1 tm3) (app tm2 tm3)
 app x y = App x y
 
 -- free variables
