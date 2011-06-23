@@ -28,3 +28,8 @@ checkSlotNum'sAccecibleSlotState ((p0fstSt,p0sndSt), (p1fstSt,p1sndSt)) slot
 getVal, getRevVal :: IntMap a -> SlotNum -> a
 getVal    state = (state IM.!)
 getRevVal state = (state IM.!) . reverseSlot
+
+valueLength :: Value -> Int
+valueLength (IntVal _) = 1
+valueLength (PAp c []) = 1
+valueLength (PAp c args) = 1 + sum (map valueLength args)
